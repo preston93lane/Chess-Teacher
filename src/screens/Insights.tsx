@@ -59,7 +59,12 @@ export function InsightsScreen() {
 
   return (
     <div className="page insights">
-      <Header title="Insights" backTo="/train" sub="How you play, where you lose points, and what to train next — computed on this device from your games, puzzles and training." />
+      <Header
+        title="Insights"
+        backTo="/train"
+        sub="How you play, where you lose points, and what to train next — computed on this device from your games, puzzles and training."
+        actions={<Button size="sm" variant="secondary" onClick={() => navigate('/report')}>Weekly report</Button>}
+      />
 
       <div className="kpi-row">
         <StatTile

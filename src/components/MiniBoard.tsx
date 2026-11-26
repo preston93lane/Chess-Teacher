@@ -1,11 +1,12 @@
 import { memo } from 'react';
 import type { Color } from '../lib/chess/core';
-import { PIECE_IMG } from './Board';
+import { usePieceUrl } from './Board';
 import { useApp } from '../lib/store/app';
 
 /** Static, non-interactive board for thumbnails and lists. */
 function MiniBoardImpl({ fen, orientation = 'w', className = '', highlight }: { fen: string; orientation?: Color; className?: string; highlight?: string[] }) {
   const theme = useApp((s) => s.settings.boardTheme);
+  const pieceSrc = usePieceUrl();
   const rows = fen.split(' ')[0].split('/');
   const grid: (string | null)[][] = rows.map((row) => {
     const out: (string | null)[] = [];
@@ -26,7 +27,7 @@ function MiniBoardImpl({ fen, orientation = 'w', className = '', highlight }: { 
       const name = 'abcdefgh'[f] + (8 - r);
       cells.push(
         <div key={`${x}${y}`} className={`mini-sq ${light ? 'sq-light' : 'sq-dark'}${hl.has(name) ? ' sq-last' : ''}`}>
-          {piece && <img src={PIECE_IMG[piece]} alt="" />}
+          {piece && <img src={pieceSrc(piece)} alt="" />}
         </div>,
       );
     }

@@ -13,8 +13,8 @@ function hash(s: string): string {
   return (h >>> 0).toString(36);
 }
 
-export async function fetchLichess(user: string, max: number): Promise<string> {
-  const url = `https://lichess.org/api/games/user/${encodeURIComponent(user)}?max=${max}&clocks=false&evals=false&opening=true`;
+export async function fetchLichess(user: string, max: number, since?: number): Promise<string> {
+  const url = `https://lichess.org/api/games/user/${encodeURIComponent(user)}?max=${max}&clocks=false&evals=false&opening=true${since ? `&since=${since}` : ''}`;
   const res = await fetch(url, { headers: { Accept: 'application/x-chess-pgn' } });
   if (res.status === 404) throw new Error(`No Lichess user named “${user}”.`);
   if (!res.ok) throw new Error(`Lichess answered with an error (${res.status}). Try again in a minute.`);

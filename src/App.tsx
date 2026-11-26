@@ -2,7 +2,8 @@ import { useEffect, type ReactNode } from 'react';
 import { Sunrise, Swords, BookOpen, Target, History, Puzzle, Settings as SettingsIcon } from 'lucide-react';
 import { useApp, dueCards } from './lib/store/app';
 import { match, navigate, useRoute } from './lib/router';
-import { Toaster } from './components/Toast';
+import { Toaster, toast } from './components/Toast';
+import { syncGames } from './lib/sync';
 import { Today } from './screens/Today';
 import { PlaySetup } from './screens/PlaySetup';
 import { GameScreen } from './screens/Game';
@@ -28,13 +29,15 @@ import { VisionTrainer } from './screens/Vision';
 import { EndgamesHub, DrillScreen } from './screens/Endgames';
 import { ExplorerScreen } from './screens/Explorer';
 import { InsightsScreen } from './screens/Insights';
+import { RetryMistakes } from './screens/RetryMistakes';
+import { WeeklyReport } from './screens/WeeklyReport';
 
 const TABS = [
   { path: '/', label: 'Today', icon: Sunrise, match: (p: string) => p === '/' },
   { path: '/play', label: 'Play', icon: Swords, match: (p: string) => p.startsWith('/play') },
   { path: '/puzzles', label: 'Puzzles', icon: Puzzle, match: (p: string) => p.startsWith('/puzzles') },
   { path: '/openings', label: 'Openings', icon: BookOpen, match: (p: string) => p.startsWith('/openings') || p.startsWith('/explorer') },
-  { path: '/train', label: 'Train', icon: Target, match: (p: string) => p.startsWith('/train') || p.startsWith('/classics') || p.startsWith('/program') || p.startsWith('/vision') || p.startsWith('/endgames') || p.startsWith('/insights') },
+  { path: '/train', label: 'Train', icon: Target, match: (p: string) => p.startsWith('/train') || p.startsWith('/classics') || p.startsWith('/program') || p.startsWith('/vision') || p.startsWith('/endgames') || p.startsWith('/insights') || p.startsWith('/report') },
   { path: '/games', label: 'Games', icon: History, match: (p: string) => p.startsWith('/games') || p.startsWith('/analysis') || p.startsWith('/import') },
 ];
 
@@ -53,6 +56,7 @@ function route(path: string): ReactNode {
   if (p === '/vision') return <VisionTrainer />;
   if (p === '/explorer') return <ExplorerScreen key={path} />;
   if (p === '/insights') return <InsightsScreen />;
+  if (p === '/report') return <WeeklyReport />;
   if (p === '/endgames') return <EndgamesHub />;
   if ((m = match('/endgames/:id', p))) return <DrillScreen key={p} id={m.id} />;
   if ((m = match('/openings/:id', p))) return <OpeningDetail id={m.id} />;
@@ -66,6 +70,7 @@ function route(path: string): ReactNode {
   if (p === '/games') return <Games />;
   if (p === '/import') return <ImportScreen />;
   if (p === '/analysis') return <AnalysisScreen />;
+  if ((m = match('/games/:id/retry', p))) return <RetryMistakes key={p} gameId={m.id} />;
   if ((m = match('/games/:id', p))) return <AnalysisScreen gameId={m.id} />;
   if (p === '/settings') return <SettingsScreen />;
   return <Today />;
@@ -101,6 +106,17 @@ export function App() {
   useEffect(() => {
     document.querySelector('.main')?.scrollTo(0, 0);
   }, [path]);
+
+  // Pull new games from linked accounts once the saved state has loaded.
+  useEffect(() => {
+    if (!hydrated) return;
+    const t = setTimeout(() => {
+      syncGames().then((r) => {
+        if (r.added) toast(`${r.added} new game${r.added === 1 ? '' : 's'} synced — open Games to review ${r.added === 1 ? 'it' : 'them'}.`, 4200);
+      });
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [hydrated]);
 
   return (
     <div className="shell">

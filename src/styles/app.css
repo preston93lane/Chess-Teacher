@@ -312,6 +312,16 @@ button.list-item:hover { background: var(--surface-2); }
 .board-walnut { --sq-light: #ecdcbf; --sq-dark: #a77b55; }
 .board-sage { --sq-light: #e6e9d8; --sq-dark: #7d9a7f; }
 .board-mono { --sq-light: #dedfe6; --sq-dark: #8c8fa3; }
+.board-brown { --sq-light: #f0d9b5; --sq-dark: #b58863; }
+.board-green { --sq-light: #eeeed2; --sq-dark: #769656; }
+.board-blue { --sq-light: #dee3e6; --sq-dark: #8ca2ad; }
+.board-purple { --sq-light: #e9e3f2; --sq-dark: #8f7bb8; }
+.board-coral { --sq-light: #f4e6da; --sq-dark: #d68a6c; }
+.board-night { --sq-light: #6a7394; --sq-dark: #3a4163; }
+.sq-premove { box-shadow: inset 0 0 0 100vmax rgba(242, 120, 160, 0.38); }
+.sq-fog { background-image: repeating-linear-gradient(45deg, rgba(10, 12, 30, 0.82) 0 6px, rgba(18, 22, 46, 0.82) 6px 12px) !important; }
+.sq-fog .dest, .sq-fog .coord { opacity: 0.35; }
+.piece-flip img { transform: rotate(180deg); }
 .board-squares { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); }
 .sq { position: relative; }
 .sq-light { background: var(--sq-light); }

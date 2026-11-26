@@ -2,14 +2,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowRight, Check, Crosshair, Lightbulb, RotateCcw, Undo2 } from 'lucide-react';
 import { Chess, type Color, type Square, type PieceSymbol } from '../lib/chess/core';
 import { engine, type EngineLine } from '../lib/engine/stockfish';
-import { useApp } from '../lib/store/app';
-import { navigate } from '../lib/router';
+import { useApp, dueDrills } from '../lib/store/app';
+import { currentPath, navigate, query } from '../lib/router';
 import { playSound, soundForSan } from '../lib/sound';
 import { Board } from '../components/Board';
 import { Button, Empty, Header, Section } from '../components/ui';
 import { MiniBoard } from '../components/MiniBoard';
 import { ALL_DRILLS, ENDGAME_CHAPTERS, chapterOf, getDrill, type EndgameDrill } from '../data/endgames';
 import { getLesson, LESSONS } from '../data/lessons';
+import { dueLabel } from '../lib/srs/scheduler';
 
 const GOAL_LABEL: Record<EndgameDrill['goal'], string> = { mate: 'Checkmate', win: 'Win', draw: 'Hold the draw' };
 
@@ -17,6 +18,7 @@ export function EndgamesHub() {
   const drills = useApp((s) => s.drills);
   const lessons = useApp((s) => s.lessons);
   const passed = ALL_DRILLS.filter((d) => drills[d.id]?.passed).length;
+  const due = dueDrills(drills).filter((id) => ALL_DRILLS.some((d) => d.id === id));
   return (
     <div className="page">
       <Header
@@ -24,6 +26,15 @@ export function EndgamesHub() {
         backTo="/train"
         sub="Technique lessons, then drills against a full-strength engine that defends (or attacks) as well as it can. Pass each drill by reaching the goal."
       />
+      {due.length > 0 && (
+        <button className="program-cta eg-due" onClick={() => navigate(`/endgames/${due[0]}?review=1`)}>
+          <span>
+            <strong>{due.length} drill{due.length === 1 ? '' : 's'} due for review</strong>
+            <span className="muted small">Passed drills come back on a spaced schedule so the technique stays automatic: {due.map((id) => ALL_DRILLS.find((d) => d.id === id)?.title).filter(Boolean).slice(0, 3).join(', ')}{due.length > 3 ? '…' : ''}</span>
+          </span>
+          <ArrowRight size={18} />
+        </button>
+      )}
       <div className="eg-progress">
         <span className="eg-progress-num num">{passed}<span className="muted">/{ALL_DRILLS.length}</span></span>
         <span className="muted small">drills passed</span>
@@ -59,7 +70,7 @@ export function EndgamesHub() {
                     <span className="eg-drill-title">{d.title}</span>
                     <span className={`eg-goal eg-goal-${d.goal}`}>{GOAL_LABEL[d.goal]}</span>
                     <span className="faint small">
-                      {st?.passed ? <><Check size={12} /> passed{st.bestMoves ? ` · best ${st.bestMoves} moves` : ''}</> : st ? `${st.attempts} attempt${st.attempts === 1 ? '' : 's'}` : `Play ${d.side === 'w' ? 'White' : 'Black'}`}
+                      {st?.passed ? <><Check size={12} /> passed{st.srs ? ` · ${st.srs.due <= Date.now() ? 'review due' : `review ${dueLabel(st.srs).toLowerCase()}`}` : ''}</> : st ? `${st.attempts} attempt${st.attempts === 1 ? '' : 's'}` : `Play ${d.side === 'w' ? 'White' : 'Black'}`}
                     </span>
                   </span>
                 </button>
@@ -119,6 +130,10 @@ function DrillRunner({ drill }: { drill: EndgameDrill }) {
   const [held, setHeld] = useState(0);
   const recorded = useRef(false);
   const promoted = useRef(false);
+  /** Hints or takebacks used this attempt: a pass then counts as 'hard' for scheduling. */
+  const assisted = useRef(false);
+  const reviewMode = query(currentPath()).get('review') === '1';
+  const dueList = dueDrills(useApp.getState().drills).filter((x) => x !== drill.id);
   const gen = useRef(0);
   const side = drill.side;
   const opp: Color = side === 'w' ? 'b' : 'w';
@@ -138,7 +153,7 @@ function DrillRunner({ drill }: { drill: EndgameDrill }) {
       setMessage(msg);
       playSound(won ? 'good' : 'bad');
       if (!recorded.current || won) {
-        record(drill.id, won, game.current.history({ verbose: true }).filter((m) => m.color === drill.side).length);
+        record(drill.id, won, game.current.history({ verbose: true }).filter((m) => m.color === drill.side).length, won ? (assisted.current ? 'hard' : 'good') : 'again');
         recorded.current = true;
       }
     },
@@ -233,6 +248,7 @@ function DrillRunner({ drill }: { drill: EndgameDrill }) {
     game.current = new Chess(drill.fen);
     promoted.current = false;
     recorded.current = false;
+    assisted.current = false;
     setMessage('');
     setBetter(null);
     setHint(false);
@@ -246,6 +262,7 @@ function DrillRunner({ drill }: { drill: EndgameDrill }) {
   };
 
   const takeBack = () => {
+    assisted.current = true;
     gen.current++;
     const g = game.current;
     const minLen = engineFirst ? 1 : 0;
@@ -323,7 +340,13 @@ function DrillRunner({ drill }: { drill: EndgameDrill }) {
               <p className="muted">{drill.idea}</p>
               {stat?.bestMoves !== undefined && drill.goal !== 'draw' && <p className="faint small num">Your best: {stat.bestMoves} moves</p>}
               <div className="row">
-                {nextDrill ? (
+                {reviewMode ? (
+                  dueList.length ? (
+                    <Button icon={<ArrowRight size={16} />} onClick={() => navigate(`/endgames/${dueList[0]}?review=1`)}>Next review ({dueList.length} left)</Button>
+                  ) : (
+                    <Button onClick={() => navigate('/endgames')}>Reviews done</Button>
+                  )
+                ) : nextDrill ? (
                   <Button icon={<ArrowRight size={16} />} onClick={() => navigate(`/endgames/${nextDrill.id}`)}>Next: {nextDrill.title}</Button>
                 ) : (
                   <Button onClick={() => navigate('/endgames')}>Back to the course</Button>
@@ -348,7 +371,7 @@ function DrillRunner({ drill }: { drill: EndgameDrill }) {
 
           {(phase === 'play' || phase === 'thinking' || phase === 'checking') && (
             <div className="row">
-              {!hint && <Button variant="secondary" size="sm" icon={<Lightbulb size={14} />} onClick={() => setHint(true)}>Hint</Button>}
+              {!hint && <Button variant="secondary" size="sm" icon={<Lightbulb size={14} />} onClick={() => { setHint(true); assisted.current = true; }}>Hint</Button>}
               <Button variant="secondary" size="sm" icon={<Undo2 size={14} />} disabled={phase !== 'play' || history.length <= (engineFirst ? 1 : 0)} onClick={takeBack}>Take back</Button>
               <Button variant="ghost" size="sm" icon={<RotateCcw size={14} />} onClick={restart}>Restart</Button>
             </div>

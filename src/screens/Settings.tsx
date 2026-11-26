@@ -1,16 +1,24 @@
 import { useRef, useState } from 'react';
-import { Download, Upload, Trash2 } from 'lucide-react';
+import { Download, RefreshCw, Upload, Trash2 } from 'lucide-react';
+import { syncGames } from '../lib/sync';
 import { entries, set as idbSet, clear as idbClear } from 'idb-keyval';
 import { useApp, type BoardTheme, type ThemePref } from '../lib/store/app';
 import { Button, Header, Section, Segmented, Sheet, Toggle } from '../components/ui';
 import { MiniBoard } from '../components/MiniBoard';
+import { PIECE_SETS, pieceUrl } from '../lib/pieces';
 import { toast } from '../components/Toast';
 
 const BOARD_THEMES: { id: BoardTheme; name: string }[] = [
   { id: 'slate', name: 'Slate' },
   { id: 'walnut', name: 'Walnut' },
+  { id: 'brown', name: 'Brown' },
+  { id: 'green', name: 'Tournament' },
+  { id: 'blue', name: 'Ice' },
   { id: 'sage', name: 'Sage' },
+  { id: 'purple', name: 'Lavender' },
+  { id: 'coral', name: 'Coral' },
   { id: 'mono', name: 'Graphite' },
+  { id: 'night', name: 'Night' },
 ];
 
 export function SettingsScreen() {
@@ -78,6 +86,20 @@ export function SettingsScreen() {
             ))}
           </div>
         </div>
+        <div className="field mt16">
+          <span className="field-label">Pieces</span>
+          <div className="piece-sets">
+            {PIECE_SETS.map((p) => (
+              <button key={p.id} className={`piece-set${(s.pieceSet ?? 'cburnett') === p.id ? ' is-on' : ''}`} onClick={() => update({ pieceSet: p.id })} aria-pressed={(s.pieceSet ?? 'cburnett') === p.id}>
+                <span className={`piece-set-demo board-${s.boardTheme}`}>
+                  <img src={pieceUrl(p.id, 'wN')} alt="" />
+                  <img src={pieceUrl(p.id, 'bQ')} alt="" />
+                </span>
+                <span>{p.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
         <Toggle checked={s.coordinates} onChange={(v) => update({ coordinates: v })} label="Board coordinates" />
         <Toggle checked={s.sound} onChange={(v) => update({ sound: v })} label="Sounds" />
       </Section>
@@ -109,6 +131,7 @@ export function SettingsScreen() {
           <input className="input" value={names} onChange={(e) => setNames(e.target.value)} onBlur={() => update({ usernames: names.split(',').map((x) => x.trim()).filter(Boolean) })} />
           <span className="muted small">Used to recognise your side in imported games.</span>
         </label>
+        <SyncSettings />
       </Section>
 
       <Section title="Your data">
@@ -153,6 +176,44 @@ export function SettingsScreen() {
           <Button variant="ghost" onClick={() => setConfirmReset(false)}>Cancel</Button>
         </div>
       </Sheet>
+    </div>
+  );
+}
+
+function SyncSettings() {
+  const sync = useApp((x) => x.settings.sync) ?? { auto: true };
+  const update = useApp((x) => x.updateSettings);
+  const [lichess, setLichess] = useState(sync.lichess ?? '');
+  const [chesscom, setChesscom] = useState(sync.chesscom ?? '');
+  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
+  const save = (patch: Partial<NonNullable<typeof sync>>) => update({ sync: { ...sync, auto: sync.auto ?? true, ...patch } });
+  const now = async () => {
+    save({ lichess: lichess.trim() || undefined, chesscom: chesscom.trim() || undefined });
+    setBusy(true);
+    setStatus(null);
+    const r = await syncGames({ force: true });
+    setBusy(false);
+    setStatus(r.skipped === 'no-accounts' ? 'Add a username first.' : r.skipped === 'offline' ? 'You’re offline.' : `${r.added} new game${r.added === 1 ? '' : 's'} imported.${r.errors.length ? ' ' + r.errors.join(' ') : ''}`);
+  };
+  return (
+    <div className="stack mt16">
+      <h3 className="field-label">Sync games automatically</h3>
+      <div className="sync-grid">
+        <label className="field">
+          <span className="field-label">Lichess username</span>
+          <input className="input" value={lichess} onChange={(e) => setLichess(e.target.value)} onBlur={() => save({ lichess: lichess.trim() || undefined })} autoCapitalize="off" autoCorrect="off" spellCheck={false} />
+        </label>
+        <label className="field">
+          <span className="field-label">Chess.com username</span>
+          <input className="input" value={chesscom} onChange={(e) => setChesscom(e.target.value)} onBlur={() => save({ chesscom: chesscom.trim() || undefined })} autoCapitalize="off" autoCorrect="off" spellCheck={false} />
+        </label>
+      </div>
+      <Toggle checked={sync.auto ?? true} onChange={(v) => save({ auto: v })} label="Import new games when the app opens" hint="Checks at most every 30 minutes, only when you’re online. New games appear in Games, ready for a coach review." />
+      <div className="row">
+        <Button variant="secondary" size="sm" icon={<RefreshCw size={16} />} onClick={now} disabled={busy}>{busy ? 'Syncing…' : 'Sync now'}</Button>
+        <span className="muted small">{status ?? (sync.lastSyncAt ? `Last synced ${new Date(sync.lastSyncAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}` : 'Not synced yet')}</span>
+      </div>
     </div>
   );
 }

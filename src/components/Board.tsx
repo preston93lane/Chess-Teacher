@@ -3,20 +3,13 @@ import { Chess, type Color, type PieceSymbol, type Square } from '../lib/chess/c
 import { useApp } from '../lib/store/app';
 import { CLASS_INFO, type MoveClass } from '../lib/coach/explain';
 
-import wK from '../assets/pieces/wK.svg';
-import wQ from '../assets/pieces/wQ.svg';
-import wR from '../assets/pieces/wR.svg';
-import wB from '../assets/pieces/wB.svg';
-import wN from '../assets/pieces/wN.svg';
-import wP from '../assets/pieces/wP.svg';
-import bK from '../assets/pieces/bK.svg';
-import bQ from '../assets/pieces/bQ.svg';
-import bR from '../assets/pieces/bR.svg';
-import bB from '../assets/pieces/bB.svg';
-import bN from '../assets/pieces/bN.svg';
-import bP from '../assets/pieces/bP.svg';
+import { pieceUrl } from '../lib/pieces';
 
-export const PIECE_IMG: Record<string, string> = { wK, wQ, wR, wB, wN, wP, bK, bQ, bR, bB, bN, bP };
+/** URL of a piece image ('wK', 'bN', …) in the chosen piece set. */
+export function usePieceUrl() {
+  const set = useApp((s) => s.settings.pieceSet);
+  return (key: string) => pieceUrl(set, key);
+}
 
 export type ArrowColor = 'g' | 'r' | 'b' | 'y';
 export interface Arrow {
@@ -42,6 +35,24 @@ export interface BoardProps {
   /** Restrict legal destinations (e.g. lessons) — optional. */
   disabled?: boolean;
   hintSquares?: string[];
+  /** Let this colour queue a move while the opponent is thinking. */
+  premoveColor?: Color | null;
+  onPremove?: (m: { from: Square; to: Square; promotion?: PieceSymbol }) => void;
+  /** The queued premove, highlighted until it is played or cancelled. */
+  premove?: [string, string] | null;
+  onCancelPremove?: () => void;
+  /** Override legal moves (variants: Chess960, Fog of War). */
+  legalMoves?: { from: string; to: string; promotion?: string }[];
+  /** Squares hidden by fog (drawn as fog, pieces there not shown). */
+  fog?: string[];
+  /** 0 = invisible pieces (blindfold), 1 = normal. */
+  pieceOpacity?: number;
+  /** Show legal-move dots (off for blindfold). */
+  showDests?: boolean;
+  /** Turn this colour's pieces upside down (face-to-face table mode). */
+  rotateColor?: Color | null;
+  /** Don't highlight a king in check (Fog of War has no check). */
+  noCheck?: boolean;
 }
 
 interface PieceItem {
@@ -114,7 +125,18 @@ function BoardImpl({
   badge,
   disabled,
   hintSquares,
+  premoveColor = null,
+  onPremove,
+  premove = null,
+  onCancelPremove,
+  legalMoves,
+  fog,
+  pieceOpacity = 1,
+  showDests = true,
+  rotateColor = null,
+  noCheck,
 }: BoardProps) {
+  const pieceSrc = usePieceUrl();
   const settings = useApp((s) => s.settings);
   const ref = useRef<HTMLDivElement>(null);
   const piecesRef = useRef<PieceItem[]>([]);
@@ -139,6 +161,39 @@ function BoardImpl({
 
   const turn = (fen.split(' ')[1] ?? 'w') as Color;
   const canMoveColor = (c: Color) => !disabled && (movable === 'both' || movable === c) && c === turn;
+  const canPremoveColor = (c: Color) => !disabled && !!onPremove && premoveColor === c && c !== turn;
+  const fogSet = useMemo(() => new Set((fog ?? []).map(sqIndex)), [fog]);
+
+  /** Moves available to the piece on `from`: legal moves, or (premove) moves as if it were our turn. */
+  const movesFrom = useCallback(
+    (from: number): { to: string; promotion?: string; captured?: boolean; color: Color }[] => {
+      const p = piecesRef.current.find((x) => x.sq === from);
+      if (!p) return [];
+      const color = p.key[0] as Color;
+      if (color !== turn) {
+        // Premove: pretend it is our move in the current position.
+        try {
+          const parts = fen.split(' ');
+          parts[1] = color;
+          parts[3] = '-';
+          const c = new Chess(parts.join(' '));
+          return c.moves({ square: sqName(from), verbose: true }).map((m) => ({ to: m.to, promotion: m.promotion, captured: !!m.captured, color }));
+        } catch {
+          return [];
+        }
+      }
+      if (legalMoves) {
+        return legalMoves
+          .filter((m) => m.from === sqName(from))
+          .map((m) => ({ to: m.to, promotion: m.promotion, captured: !!pieceAtIndex(sqIndex(m.to)), color }));
+      }
+      if (!chess) return [];
+      return chess.moves({ square: sqName(from), verbose: true }).map((m) => ({ to: m.to, promotion: m.promotion, captured: !!m.captured, color }));
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fen, chess, legalMoves, turn],
+  );
+  const pieceAtIndex = (i: number) => piecesRef.current.some((x) => x.sq === i && !fogSet.has(i));
 
   useEffect(() => {
     setSelected(null);
@@ -146,18 +201,17 @@ function BoardImpl({
   }, [fen]);
 
   const dests = useMemo(() => {
-    if (selected === null || !chess) return new Map<number, boolean>();
-    const moves = chess.moves({ square: sqName(selected), verbose: true });
     const m = new Map<number, boolean>();
-    for (const mv of moves) m.set(sqIndex(mv.to), !!mv.captured);
+    if (selected === null) return m;
+    for (const mv of movesFrom(selected)) m.set(sqIndex(mv.to), !!mv.captured);
     return m;
-  }, [selected, chess]);
+  }, [selected, movesFrom]);
 
   const checkSq = useMemo(() => {
-    if (!chess || !chess.inCheck()) return null;
+    if (noCheck || !chess || !chess.inCheck()) return null;
     const k = pieces.find((p) => p.key === turn + 'K');
     return k ? k.sq : null;
-  }, [chess, pieces, turn]);
+  }, [chess, pieces, turn, noCheck]);
 
   const toXY = (sq: number) => {
     const f = sq % 8;
@@ -181,17 +235,19 @@ function BoardImpl({
 
   const attemptMove = useCallback(
     (from: number, to: number) => {
-      if (!chess || !onMove) return false;
-      const moves = chess.moves({ square: sqName(from), verbose: true }).filter((m) => m.to === sqName(to));
+      const moves = movesFrom(from).filter((m) => m.to === sqName(to));
       if (!moves.length) return false;
+      const isPremove = moves[0].color !== turn;
+      const send = isPremove ? onPremove : onMove;
+      if (!send) return false;
       if (moves.some((m) => m.promotion)) {
-        if (settings.autoQueen) onMove({ from: sqName(from), to: sqName(to), promotion: 'q' });
+        if (settings.autoQueen || isPremove) send({ from: sqName(from), to: sqName(to), promotion: 'q' });
         else setPromo({ from, to, color: moves[0].color });
-      } else onMove({ from: sqName(from), to: sqName(to) });
+      } else send({ from: sqName(from), to: sqName(to) });
       setSelected(null);
       return true;
     },
-    [chess, onMove, settings.autoQueen],
+    [movesFrom, onMove, onPremove, settings.autoQueen, turn],
   );
 
   const onPointerDown = (e: React.PointerEvent) => {
@@ -203,7 +259,12 @@ function BoardImpl({
       attemptMove(selected, sq);
       return;
     }
-    if (p && canMoveColor(p.key[0] as Color)) {
+    if (premove && onCancelPremove && !(p && canPremoveColor(p.key[0] as Color))) {
+      onCancelPremove();
+      setSelected(null);
+      return;
+    }
+    if (p && !fogSet.has(sq) && (canMoveColor(p.key[0] as Color) || canPremoveColor(p.key[0] as Color))) {
       const wasSelected = selected === sq;
       setSelected(sq);
       dragStart.current = { x: e.clientX, y: e.clientY, sq, wasSelected };
@@ -244,6 +305,8 @@ function BoardImpl({
   const hintSet = new Set((hintSquares ?? []).map(sqIndex));
   const lastFrom = lastMove ? sqIndex(lastMove[0]) : -1;
   const lastTo = lastMove ? sqIndex(lastMove[1]) : -1;
+  const preFrom = premove ? sqIndex(premove[0]) : -1;
+  const preTo = premove ? sqIndex(premove[1]) : -1;
 
   const squares = [];
   for (let y = 0; y < 8; y++) {
@@ -254,6 +317,8 @@ function BoardImpl({
       const light = (f + r) % 2 === 1;
       const cls = ['sq', light ? 'sq-light' : 'sq-dark'];
       if (sq === lastFrom || sq === lastTo) cls.push('sq-last');
+      if (sq === preFrom || sq === preTo) cls.push('sq-premove');
+      if (fogSet.has(sq)) cls.push('sq-fog');
       if (sq === selected) cls.push('sq-selected');
       if (sq === checkSq) cls.push('sq-check');
       const mk = markMap.get(sq);
@@ -262,7 +327,7 @@ function BoardImpl({
       const dest = dests.get(sq);
       squares.push(
         <div key={sq} className={cls.join(' ')} data-sq={sqName(sq)}>
-          {dest !== undefined && <span className={dest ? 'dest dest-capture' : 'dest'} />}
+          {dest !== undefined && showDests && <span className={dest ? 'dest dest-capture' : 'dest'} />}
           {settings.coordinates && x === 0 && <span className="coord coord-rank">{r + 1}</span>}
           {settings.coordinates && y === 7 && <span className="coord coord-file">{FILES[f]}</span>}
         </div>,
@@ -287,8 +352,9 @@ function BoardImpl({
       aria-label="Chess board"
     >
       <div className="board-squares">{squares}</div>
-      <div className="board-pieces">
+      <div className="board-pieces" style={pieceOpacity < 1 ? { opacity: pieceOpacity } : undefined}>
         {pieces.map((p) => {
+          if (fogSet.has(p.sq)) return null;
           const { x, y } = toXY(p.sq);
           const dragging = drag?.active && drag.sq === p.sq;
           const style: React.CSSProperties = dragging
@@ -299,8 +365,8 @@ function BoardImpl({
               }
             : { transform: `translate(${x * 100}%, ${y * 100}%)` };
           return (
-            <div key={p.id} className={`piece${dragging ? ' piece-drag' : ''}`} style={style}>
-              <img src={PIECE_IMG[p.key]} alt={p.key} draggable={false} />
+            <div key={p.id} className={`piece${dragging ? ' piece-drag' : ''}${rotateColor && p.key[0] === rotateColor && !dragging ? ' piece-flip' : ''}`} style={style}>
+              <img src={pieceSrc(p.key)} alt={p.key} draggable={false} />
             </div>
           );
         })}
@@ -363,7 +429,7 @@ function BoardImpl({
                   setPromo(null);
                 }}
               >
-                <img src={PIECE_IMG[promo.color + t.toUpperCase()]} alt={t} />
+                <img src={pieceSrc(promo.color + t.toUpperCase())} alt={t} />
               </button>
             ))}
             <button className="promo-cancel" onClick={() => setPromo(null)}>

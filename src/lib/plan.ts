@@ -258,6 +258,8 @@ export function dailySession(state: {
   lessons: Record<string, LessonProgress>;
   repertoire: Record<string, { side: Color }>;
   dailyPuzzleDone?: boolean;
+  /** Endgame drills due for spaced review. */
+  dueDrills?: string[];
 }): PlanStep[] {
   const steps: PlanStep[] = [];
   if (!state.dailyPuzzleDone) {
@@ -283,6 +285,17 @@ export function dailySession(state: {
         .join(' · '),
       to: '/train/review',
       minutes: Math.max(3, Math.round(due.length * 1.2)),
+    });
+  }
+  if (state.dueDrills?.length) {
+    const n = state.dueDrills.length;
+    steps.push({
+      id: 'endgame-review',
+      kind: 'drill',
+      title: `Endgame review: ${n} drill${n === 1 ? '' : 's'}`,
+      detail: 'Technique you’ve passed before, back on its spaced schedule.',
+      to: `/endgames/${state.dueDrills[0]}?review=1`,
+      minutes: Math.max(3, n * 3),
     });
   }
   const unreviewed = state.games.find((g) => !g.reviewed && g.plies >= 10);

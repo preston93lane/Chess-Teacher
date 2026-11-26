@@ -601,3 +601,36 @@
 .board-screen-page:has(.step-pill) { padding-bottom: 96px; }
 @media (max-width: 899px) { .step-inline { display: none !important; } }
 @media (min-width: 900px) { .board-screen-page:has(.step-pill) { padding-bottom: 24px; } }
+
+/* ── Piece-set picker ──────────────────────────────────────── */
+.theme-swatches { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }
+.piece-sets { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
+.piece-set { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line-soft); font-size: 13px; font-weight: 650; }
+.piece-set.is-on { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
+.piece-set-demo { display: grid; grid-template-columns: 1fr 1fr; width: 100%; border-radius: 6px; overflow: hidden; }
+.piece-set-demo img { width: 100%; aspect-ratio: 1; display: block; }
+.piece-set-demo img:first-child { background: var(--sq-light); }
+.piece-set-demo img:last-child { background: var(--sq-dark); }
+
+/* ── Retry mistakes ────────────────────────────────────────── */
+.retry-cta { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; width: 100%; text-align: left; padding: 14px 16px; border-radius: var(--radius-lg); background: var(--primary); color: var(--primary-ink); border: 0; }
+.retry-cta span { display: flex; flex-direction: column; gap: 2px; }
+.retry-cta .muted { color: color-mix(in srgb, var(--primary-ink) 70%, transparent); }
+.retry-progress { display: flex; gap: 5px; margin: 0 0 10px; flex-wrap: wrap; }
+.retry-dot { width: 22px; height: 6px; border-radius: 3px; background: var(--surface-3); }
+.retry-dot.is-current { background: var(--primary); }
+.retry-dot.is-good { background: var(--t-best); }
+.retry-dot.is-bad { background: var(--t-mistake); }
+.retry-done { align-items: flex-start; }
+.sync-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+
+/* ── Weekly report ─────────────────────────────────────────── */
+.week-bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; height: 150px; padding: 12px; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid var(--line-soft); }
+.week-bar { display: grid; grid-template-rows: 18px 1fr 18px; justify-items: center; gap: 4px; min-width: 0; }
+.week-bar-value { font-size: 12px; font-weight: 700; color: var(--muted); }
+.week-bar-track { width: 100%; max-width: 24px; display: flex; align-items: flex-end; }
+.week-bar-fill { width: 100%; border-radius: 4px 4px 0 0; background: var(--accent-viz); min-height: 0; }
+.week-bar-label { font-size: 12px; color: var(--faint); }
+.weekly-card { position: relative; display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: left; padding: 12px 40px 12px 14px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line-soft); border-left: 3px solid var(--accent-viz); margin: 10px 0; }
+.weekly-card-title { font-weight: 700; }
+.weekly-card-go { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); }

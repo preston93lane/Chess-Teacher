@@ -13,6 +13,8 @@ import {
   X,
   FileInput,
   Gauge,
+  RotateCcw,
+  ArrowRight,
 } from 'lucide-react';
 import { Chess, START_FEN, formatLine, uciOf, type Color, type PieceSymbol, type Square } from '../lib/chess/core';
 import { parsePgn, parseMovetext, toPgn } from '../lib/chess/pgn';
@@ -30,6 +32,7 @@ import { EvalBar } from '../components/EvalBar';
 import { EvalGraph } from '../components/EvalGraph';
 import { MoveList } from '../components/MoveList';
 import { MasterMoves } from '../components/MasterMoves';
+import { retryCandidates } from './RetryMistakes';
 import { VerdictCard, EngineLines, PositionReportView } from '../components/Coach';
 import { InsightsPanel } from '../components/Insights';
 import { MoveBreakdown } from '../components/MoveBreakdown';
@@ -599,6 +602,16 @@ function ReviewSummary({ review, myColor, onJump, gameId }: { review: GameReview
           </div>
         ))}
       </div>
+      {myColor && gameId && retryCandidates(review.moves, myColor).length > 0 && (
+        <button className="retry-cta" onClick={() => navigate(`/games/${gameId}/retry`)}>
+          <RotateCcw size={20} />
+          <span>
+            <strong>Retry your mistakes</strong>
+            <span className="muted small">Replay the {retryCandidates(review.moves, myColor).length} position{retryCandidates(review.moves, myColor).length === 1 ? '' : 's'} where you went wrong and find the better move.</span>
+          </span>
+          <ArrowRight size={18} />
+        </button>
+      )}
       {review.summary.length > 0 && (
         <div className="panel prose">
           {review.summary.map((s, i) => <p key={i}>{s}</p>)}

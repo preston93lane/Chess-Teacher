@@ -1,12 +1,13 @@
 import { useMemo } from 'react';
 import { ArrowRight, Flame, Settings as SettingsIcon, Swords, Upload, Microscope } from 'lucide-react';
-import { useApp, streak, dueCards, today } from '../lib/store/app';
+import { useApp, streak, dueCards, dueDrills, today } from '../lib/store/app';
 import { dailySession, estimateRating, getTrack, findWeaknesses } from '../lib/plan';
 import { navigate } from '../lib/router';
 import { IconButton, Section } from '../components/ui';
 import { OPENINGS } from '../data/openings';
 import { ProgramTodayCard } from './Program';
 import { currentDay } from '../lib/program';
+import { WeeklyCard } from './WeeklyReport';
 
 const KIND_LABEL: Record<string, string> = {
   review: 'Review',
@@ -28,8 +29,9 @@ export function Today() {
         lessons: s.lessons,
         repertoire: s.repertoire,
         dailyPuzzleDone: s.puzzles.dailyDone === today(),
+        dueDrills: dueDrills(s.drills),
       }),
-    [s.cards, s.games, s.plan, s.lessons, s.repertoire, s.puzzles.dailyDone],
+    [s.cards, s.games, s.plan, s.lessons, s.repertoire, s.puzzles.dailyDone, s.drills],
   );
   const days = streak(s.activity);
   const due = dueCards(s.cards).length;
@@ -40,7 +42,7 @@ export function Today() {
   const weaknesses = findWeaknesses(s.games);
   const todayAct = s.activity[today()];
   const programDay = s.program ? currentDay(s.program) : null;
-  const extra = s.program ? steps.filter((st) => st.kind === 'review' || st.kind === 'analyse') : steps;
+  const extra = s.program ? steps.filter((st) => st.kind === 'review' || st.kind === 'analyse' || st.id === 'endgame-review') : steps;
   const openBlocks = programDay ? programDay.blocks.filter((b) => !s.program!.done.includes(b.id)) : [];
   const stepCount = extra.length + openBlocks.length;
   const totalMinutes = extra.reduce((a, b) => a + b.minutes, 0) + openBlocks.reduce((a, b) => a + b.minutes, 0);
@@ -67,9 +69,9 @@ export function Today() {
       <div className="today-grid">
         <div className="today-main">
         {s.program && <ProgramTodayCard />}
-        {s.program && steps.filter((st) => st.kind === 'review' || st.kind === 'analyse').length > 0 && <h3 className="also-today">Also today</h3>}
+        {s.program && extra.length > 0 && <h3 className="also-today">Also today</h3>}
         <ol className="session">
-          {(s.program ? steps.filter((st) => st.kind === 'review' || st.kind === 'analyse') : steps).map((st, i) => (
+          {extra.map((st, i) => (
             <li key={st.id}>
               <button className="session-step" onClick={() => navigate(st.to)}>
                 <span className="session-num">{i + 1}</span>
@@ -121,6 +123,7 @@ export function Today() {
               Done today: {[todayAct.reviews && `${todayAct.reviews} reviews`, todayAct.lines && `${todayAct.lines} lines`, todayAct.lessons && `${todayAct.lessons} lessons`, todayAct.games && `${todayAct.games} games`].filter(Boolean).join(', ') || 'nothing yet'}
             </p>
           )}
+          <WeeklyCard />
           <div className="quick-actions">
             <button className="quick" onClick={() => navigate('/play')}>
               <Swords size={20} />

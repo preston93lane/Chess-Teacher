@@ -338,6 +338,14 @@ function LiveGameView({ game }: { game: LiveGame }) {
       });
   }, [fen, turn, config.userColor, game.status, reviewing, opening, bot, style, config.startFen, game.sans, patch, tc, patchClock, config.presetSans.length, moves]);
 
+  // ---- premoves: queued while the bot thinks, played as soon as it is our turn ----
+  const [premove, setPremove] = useState<{ from: Square; to: Square; promotion?: PieceSymbol } | null>(null);
+  const premoveRef = useRef(premove);
+  premoveRef.current = premove;
+  useEffect(() => {
+    if (game.status !== 'playing') setPremove(null);
+  }, [game.status]);
+
   // ---- user moves ----
   const onMove = useCallback(
     async (mv: { from: Square; to: Square; promotion?: PieceSymbol }) => {
@@ -418,6 +426,18 @@ function LiveGameView({ game }: { game: LiveGame }) {
     },
     [userTurn, viewPly, fen, game, opening, config.coachLive, patch, analysis, depth, moves, tc, config.userColor],
   );
+
+  useEffect(() => {
+    const pm = premoveRef.current;
+    if (!pm || !userTurn || viewPly !== null || reviewing) return;
+    setPremove(null);
+    try {
+      new Chess(fen).move(pm);
+    } catch {
+      return; // no longer legal: drop it
+    }
+    void onMove(pm);
+  }, [fen, userTurn, viewPly, reviewing, onMove]);
 
   const takeBack = () => {
     engine.cancelAll();
@@ -557,6 +577,10 @@ function LiveGameView({ game }: { game: LiveGame }) {
                 orientation={orientation}
                 movable={isLive && userTurn && !reviewing ? config.userColor : null}
                 onMove={onMove}
+                premoveColor={isLive && !userTurn && game.status === 'playing' ? config.userColor : null}
+                onPremove={setPremove}
+                premove={premove ? [premove.from, premove.to] : null}
+                onCancelPremove={() => setPremove(null)}
                 lastMove={lastMove ? [lastMove.from, lastMove.to] : null}
                 arrows={[...arrows, ...betterArrows]}
                 marks={marks}

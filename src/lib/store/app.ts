@@ -6,11 +6,14 @@ import { newCardState, schedule, type CardState, type Grade } from '../srs/sched
 import { buildDay, getProgram, type ActiveProgram } from '../program';
 
 export type ThemePref = 'dark' | 'light' | 'system';
-export type BoardTheme = 'slate' | 'walnut' | 'sage' | 'mono';
+export type BoardTheme = 'slate' | 'walnut' | 'brown' | 'green' | 'blue' | 'sage' | 'purple' | 'coral' | 'mono' | 'night';
 
 export interface Settings {
   theme: ThemePref;
   boardTheme: BoardTheme;
+  pieceSet?: string;
+  /** Accounts whose new games are imported automatically. */
+  sync?: { lichess?: string; chesscom?: string; auto: boolean; lastSyncAt?: number };
   coordinates: boolean;
   sound: boolean;
   coachLive: boolean;
@@ -105,6 +108,15 @@ export interface PuzzleStats {
 
 export const defaultPuzzleStats: PuzzleStats = { rating: 1500, attempts: 0, solved: 0, failed: 0, history: [], seen: [], rush: {} };
 
+export interface DrillStat {
+  passed: boolean;
+  attempts: number;
+  bestMoves?: number;
+  /** Spaced-repetition schedule, from the first pass on. */
+  srs?: CardState;
+  log?: { t: number; passed: boolean }[];
+}
+
 export interface PlanState {
   trackId: string;
   startedAt: number;
@@ -125,8 +137,9 @@ interface AppState {
   program: ActiveProgram | null;
   vision: Record<string, number>;
   recordVision: (mode: string, score: number) => void;
-  drills: Record<string, { passed: boolean; attempts: number; bestMoves?: number }>;
-  recordDrill: (id: string, passed: boolean, moves: number) => void;
+  drills: Record<string, DrillStat>;
+  /** grade: how cleanly a pass went ('hard' after hints or takebacks); failures reschedule a learned drill. */
+  recordDrill: (id: string, passed: boolean, moves: number, grade?: Grade) => void;
   startProgram: (p: Omit<ActiveProgram, 'done' | 'checkpoints' | 'startedAt'>) => void;
   stopProgram: () => void;
   completeBlock: (id: string | null | undefined) => boolean;
@@ -170,6 +183,7 @@ export function today(d = new Date()) {
 export const defaultSettings: Settings = {
   theme: 'dark',
   boardTheme: 'slate',
+  pieceSet: 'cburnett',
   coordinates: true,
   sound: true,
   coachLive: true,
@@ -202,8 +216,10 @@ export const useApp = create<AppState>()(
         get().logActivity('puzzles');
       },
       drills: {},
-      recordDrill: (id, passed, moves) => {
-        const cur = get().drills[id] ?? { passed: false, attempts: 0 };
+      recordDrill: (id, passed, moves, grade) => {
+        const cur: DrillStat = get().drills[id] ?? { passed: false, attempts: 0 };
+        const now = Date.now();
+        const srs = passed ? schedule(cur.srs ?? newCardState(now), grade ?? 'good', now) : cur.srs ? schedule(cur.srs, 'again', now) : undefined;
         set({
           drills: {
             ...get().drills,
@@ -211,6 +227,8 @@ export const useApp = create<AppState>()(
               passed: cur.passed || passed,
               attempts: cur.attempts + 1,
               bestMoves: passed ? Math.min(cur.bestMoves ?? Infinity, moves) : cur.bestMoves,
+              srs,
+              log: [...(cur.log ?? []), { t: now, passed }].slice(-30),
             },
           },
         });
@@ -393,6 +411,14 @@ export const useApp = create<AppState>()(
 );
 
 /** Consecutive days (ending today or yesterday) with any training activity. */
+/** Endgame drills whose review is due (learned drills only). */
+export function dueDrills(drills: Record<string, DrillStat>, now = Date.now()): string[] {
+  return Object.entries(drills)
+    .filter(([, d]) => d.srs && d.srs.due <= now)
+    .sort((a, b) => a[1].srs!.due - b[1].srs!.due)
+    .map(([id]) => id);
+}
+
 export function streak(activity: Record<string, DayActivity>): number {
   let n = 0;
   const d = new Date();

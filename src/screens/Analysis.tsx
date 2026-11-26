@@ -321,6 +321,11 @@ function AnalysisView({ gameId, source, autoReview }: { gameId?: string; source:
     ? 'Move pieces freely. The engine and coach follow along.'
     : [meta?.opening ?? review?.opening?.name, source.headers.Result, source.headers.Date?.replace(/\?/g, '').replace(/\.+$/, '')].filter(Boolean).join(' · ');
 
+  const atEnd = !explore && ply >= mainline.length;
+  const stepBack = () =>
+    explore ? setExplore(explore.sans.length > 1 ? { ...explore, sans: explore.sans.slice(0, -1), reviews: explore.reviews.slice(0, -1) } : null) : go(ply - 1);
+  const stepForward = () => go(ply + 1);
+
   return (
     <div className="page board-screen-page">
       <Header
@@ -371,18 +376,21 @@ function AnalysisView({ gameId, source, autoReview }: { gameId?: string; source:
           </div>
           <div className="controls">
             <div className="controls-group">
-              <IconButton label="Start" onClick={() => go(0)}><ChevronsLeft /></IconButton>
-              <IconButton label="Previous" onClick={() => (explore ? setExplore(explore.sans.length > 1 ? { ...explore, sans: explore.sans.slice(0, -1), reviews: explore.reviews.slice(0, -1) } : null) : go(ply - 1))}>
-                <ChevronLeft />
-              </IconButton>
-              <IconButton label="Next" onClick={() => go(ply + 1)} disabled={!explore && ply >= mainline.length}><ChevronRight /></IconButton>
-              <IconButton label="End" onClick={() => go(mainline.length)}><ChevronsRight /></IconButton>
-            </div>
-            <div className="controls-group">
               <IconButton label="Flip board" onClick={() => setOrientation(orientation === 'w' ? 'b' : 'w')}><RefreshCw /></IconButton>
               <IconButton label="Save position to review deck" onClick={savePuzzle}><BookmarkPlus /></IconButton>
               <IconButton label="Practice from here" onClick={() => navigate(`/play?fen=${encodeURIComponent(fen)}&side=${sideToMove}`)}><Swords /></IconButton>
             </div>
+            <div className="controls-group">
+              <IconButton label="Start" onClick={() => go(0)}><ChevronsLeft /></IconButton>
+              <IconButton label="Previous" className="step-inline" onClick={stepBack}><ChevronLeft /></IconButton>
+              <IconButton label="Next" className="step-inline" onClick={stepForward} disabled={atEnd}><ChevronRight /></IconButton>
+              <IconButton label="End" onClick={() => go(mainline.length)}><ChevronsRight /></IconButton>
+            </div>
+          </div>
+          {/* Phone: previous/next float in the right-thumb zone, above the tab bar. */}
+          <div className="step-pill mobile-only" role="group" aria-label="Step through the game">
+            <button className="step-btn" aria-label="Previous move" onClick={stepBack}><ChevronLeft size={24} /></button>
+            <button className="step-btn step-next" aria-label="Next move" onClick={stepForward} disabled={atEnd}><ChevronRight size={28} /></button>
           </div>
           {explore && (
             <div className="explore-bar">

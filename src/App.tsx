@@ -99,7 +99,7 @@ export function App() {
   }, [theme]);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    document.querySelector('.main')?.scrollTo(0, 0);
   }, [path]);
 
   return (

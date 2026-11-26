@@ -586,3 +586,18 @@
 .heatmap-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
 .heat-legend { display: inline-flex; align-items: center; gap: 3px; }
 .heat-legend .heat-cell { width: 11px; height: 11px; }
+
+/* ── Thumb-zone stepping (game review on phones) ───────────── */
+.step-pill {
+  position: fixed; right: 14px; bottom: calc(var(--nav-h) + var(--safe-b) + 14px); z-index: 30;
+  display: flex; gap: 6px; padding: 6px; border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-3) 94%, transparent); border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+.step-btn { width: 52px; height: 52px; display: grid; place-items: center; border-radius: 999px; border: 0; background: var(--surface); color: var(--text); }
+.step-btn:active { transform: scale(0.95); }
+.step-btn.step-next { width: 72px; background: var(--primary); color: var(--primary-ink); }
+.step-btn:disabled { opacity: 0.4; }
+.board-screen-page:has(.step-pill) { padding-bottom: 96px; }
+@media (max-width: 899px) { .step-inline { display: none !important; } }
+@media (min-width: 900px) { .board-screen-page:has(.step-pill) { padding-bottom: 24px; } }

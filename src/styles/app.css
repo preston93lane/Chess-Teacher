@@ -104,6 +104,9 @@
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+/* The page itself never scrolls: content scrolls inside .main, which starts
+   below the status bar, so nothing slides under it (iOS blurs whatever does). */
+html, body, #root { height: 100%; overflow: hidden; }
 body {
   font-family: var(--font);
   font-size: 16px;
@@ -136,9 +139,13 @@ p { margin: 0; }
 .faint { color: var(--faint); }
 
 /* ---------- Shell ---------- */
-.shell { min-height: 100dvh; display: flex; }
-.main { flex: 1; min-width: 0; padding-bottom: calc(var(--nav-h) + var(--safe-b) + 24px); }
-.page { max-width: 1180px; margin: 0 auto; padding: calc(var(--safe-t) + 12px) 16px 24px; }
+.shell { height: 100%; display: flex; }
+.main {
+  position: fixed; top: var(--safe-t); left: 0; right: 0; bottom: 0; min-width: 0;
+  overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(var(--nav-h) + var(--safe-b) + 24px);
+}
+.page { max-width: 1180px; margin: 0 auto; padding: 12px 16px 24px; }
 .page-narrow { max-width: 760px; }
 
 .nav {
@@ -167,7 +174,7 @@ p { margin: 0; }
 }
 
 @media (min-width: 900px) {
-  .main { padding-bottom: 32px; margin-left: 232px; }
+  .main { padding-bottom: 32px; left: 232px; }
   .nav {
     top: 0; right: auto; width: 232px; height: 100dvh; flex-direction: column; justify-content: flex-start;
     gap: 2px; padding: 22px 14px; border-top: 0; border-right: 1px solid var(--line-soft);

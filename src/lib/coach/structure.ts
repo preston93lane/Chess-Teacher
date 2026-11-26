@@ -308,8 +308,7 @@ function detectStructures(b: BoardModel): Structure[] {
   if (!out.length) {
     const centerPawns = W[d].length + W[e].length + B[d].length + B[e].length;
     if (centerPawns <= 1) push('open-center', null);
-    const locked =
-      W[d].some((r) => B[d].includes(r + 1)) || W[e].some((r) => B[e].includes(r + 1));
+    const locked = W[d].some((r) => B[d].includes(r + 1)) && W[e].some((r) => B[e].includes(r + 1));
     if (locked) push('locked-center', null);
   }
   return out;

@@ -195,7 +195,7 @@ function narrate(moves: MoveReview[], evals: (Score | undefined)[], opening: Gam
   const out: string[] = [];
   if (opening) out.push(`${opening.name} (${opening.eco}). Theory lasted ${Math.ceil(bookPly / 2)} moves.`);
   const afterOpening = evals[Math.min(evals.length - 1, Math.max(bookPly, 20))];
-  if (afterOpening) {
+  if (afterOpening && evals.length > 24) {
     const w = winPct(afterOpening, 'w');
     out.push(
       w > 65

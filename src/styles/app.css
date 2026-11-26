@@ -380,7 +380,7 @@ button.list-item:hover { background: var(--surface-2); }
 }
 @media (min-width: 900px) {
   .board-screen { grid-template-columns: minmax(0, 1fr) 380px; align-items: start; gap: 24px; }
-  .board-col { max-width: min(680px, calc(100dvh - 120px)); width: 100%; justify-self: end; }
+  .board-col { max-width: min(660px, calc(100dvh - 210px)); width: 100%; justify-self: end; }
   .side-col { position: sticky; top: 24px; max-height: calc(100dvh - 48px); overflow: auto; }
 }
 

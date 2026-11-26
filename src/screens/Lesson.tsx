@@ -92,7 +92,7 @@ function SectionView({ section, solved, onSolved }: { section: LessonSection; so
   const [tries, setTries] = useState(0);
   const [reveal, setReveal] = useState(false);
   const turn = base.fen.split(' ')[1] as Color;
-  const orientation = section.orientation ?? turn;
+  const orientation = section.orientation ?? (section.task ? turn : section.practice?.side ?? 'w');
   const task = section.task;
 
   useEffect(() => {

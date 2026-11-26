@@ -263,6 +263,8 @@ export function describeMove(fenBefore: string, move: Move, motifs?: Motif[], pr
       out.push(`Gains time by hitting the ${name(after.sq[hitsPiece]!.type)}.`);
     else if (hitsPawn) out.push(`Strikes at the ${String.fromCharCode(97 + (hitPawnIdx! % 8))}${Math.floor(hitPawnIdx! / 8) + 1}-pawn — a pawn break.`);
     else if (CENTER.has(toSq) || ((f === 'c' || f === 'f') && fullmove <= 10)) out.push('Claims space in the center.');
+    else if (fullmove <= 12 && ['c', 'd', 'e'].includes(f) && Math.abs(parseInt(toSq[1]) - parseInt(move.from[1])) === 1)
+      out.push('A solid pawn move: it supports the center and opens a diagonal for a bishop.');
     else if ((toSq === 'h3' || toSq === 'h6' || toSq === 'a3' || toSq === 'a6') && fullmove <= 20)
       out.push(
         toSq === 'h3' || toSq === 'h6'

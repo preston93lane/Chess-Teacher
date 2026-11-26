@@ -26,7 +26,7 @@ export function scoreCp(s: Score | undefined): number {
 export function winPctWhite(s: Score | undefined): number {
   if (!s) return 50;
   if (s.mate !== undefined) {
-    if (s.mate === 0) return 50;
+    if (s.mate === 0) return s.cp === undefined || s.cp === 0 ? 50 : s.cp > 0 ? 100 : 0;
     return s.mate > 0 ? 100 : 0;
   }
   const cp = Math.max(-1000, Math.min(1000, s.cp ?? 0));

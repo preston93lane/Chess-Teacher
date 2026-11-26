@@ -232,3 +232,13 @@
 .swatch { display: flex; flex-direction: column; gap: 6px; align-items: center; padding: 8px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line-soft); font-size: 13px; font-weight: 650; }
 .swatch > div { width: 100%; }
 .swatch.is-on { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
+
+/* ---------- Compact headers on phone board screens ---------- */
+@media (max-width: 899px) {
+  .board-screen-page .page-header { margin: 0 0 8px; min-height: 40px; }
+  .board-screen-page .page-header h1 { font-size: 24px; }
+  .board-screen-page .page-header-sub { font-size: 13px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .board-screen-page .player-tag { min-height: 30px; padding: 2px 0; font-size: 15px; }
+  .board-screen-page .controls { margin-top: 2px; }
+  .board-screen { gap: 10px; }
+}

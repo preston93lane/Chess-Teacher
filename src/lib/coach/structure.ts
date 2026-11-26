@@ -5,7 +5,6 @@
 import type { Color, PieceSymbol } from '../chess/core';
 import {
   attackMap,
-  attacksFrom,
   fileOf,
   kingIndex,
   mobility,

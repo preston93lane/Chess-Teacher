@@ -1,0 +1,98 @@
+import { parseManyPgn, type ParsedGame } from './chess/pgn';
+import { openingFor } from './openings/eco';
+import type { Color } from './chess/core';
+import type { GameMeta } from './store/app';
+import { saveGameBody } from './store/gamesDb';
+
+function hash(s: string): string {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(36);
+}
+
+export async function fetchLichess(user: string, max: number): Promise<string> {
+  const url = `https://lichess.org/api/games/user/${encodeURIComponent(user)}?max=${max}&clocks=false&evals=false&opening=true`;
+  const res = await fetch(url, { headers: { Accept: 'application/x-chess-pgn' } });
+  if (res.status === 404) throw new Error(`No Lichess user named “${user}”.`);
+  if (!res.ok) throw new Error(`Lichess answered with an error (${res.status}). Try again in a minute.`);
+  return res.text();
+}
+
+export async function fetchChessCom(user: string, max: number): Promise<string> {
+  const base = `https://api.chess.com/pub/player/${encodeURIComponent(user.toLowerCase())}/games/archives`;
+  const res = await fetch(base);
+  if (res.status === 404) throw new Error(`No Chess.com user named “${user}”.`);
+  if (!res.ok) throw new Error(`Chess.com answered with an error (${res.status}).`);
+  const { archives } = (await res.json()) as { archives: string[] };
+  const pgns: string[] = [];
+  for (const url of [...archives].reverse()) {
+    const r = await fetch(url);
+    if (!r.ok) break;
+    const data = (await r.json()) as { games: { pgn?: string; rules?: string }[] };
+    const games = data.games.filter((g) => g.pgn && (g.rules ?? 'chess') === 'chess').reverse();
+    for (const g of games) {
+      pgns.push(g.pgn!);
+      if (pgns.length >= max) break;
+    }
+    if (pgns.length >= max) break;
+  }
+  return pgns.join('\n\n');
+}
+
+export interface ImportResult {
+  added: GameMeta[];
+  skipped: number;
+  errors: string[];
+}
+
+export async function importPgnText(
+  text: string,
+  opts: { source: GameMeta['source']; usernames: string[]; existing: Set<string> },
+): Promise<ImportResult> {
+  const games = parseManyPgn(text);
+  const added: GameMeta[] = [];
+  const errors: string[] = [];
+  let skipped = 0;
+  const names = opts.usernames.map((u) => u.trim().toLowerCase()).filter(Boolean);
+  for (const g of games) {
+    const id = `imp_${hash(`${g.headers.White}|${g.headers.Black}|${g.headers.Date}|${g.headers.UTCTime ?? ''}|${g.moves.map((m) => m.san).join(' ')}`)}`;
+    if (opts.existing.has(id)) {
+      skipped++;
+      continue;
+    }
+    if (g.error) errors.push(`${g.headers.White ?? '?'} vs ${g.headers.Black ?? '?'}: ${g.error}`);
+    const myColor = detectColor(g, names);
+    const op = await openingFor(g.moves.map((m) => m.san), g.startFen).catch(() => undefined);
+    const comments: Record<number, string> = {};
+    g.moves.forEach((m, i) => m.comment && (comments[i] = m.comment));
+    await saveGameBody({ id, headers: g.headers, startFen: g.startFen, sans: g.moves.map((m) => m.san), comments });
+    const date = (g.headers.UTCDate ?? g.headers.Date ?? '').replace(/\./g, '-');
+    added.push({
+      id,
+      createdAt: Date.parse(date) || Date.now(),
+      white: g.headers.White ?? 'White',
+      black: g.headers.Black ?? 'Black',
+      result: g.result,
+      myColor,
+      source: opts.source,
+      opening: op?.name ?? g.headers.Opening,
+      eco: op?.eco ?? g.headers.ECO,
+      plies: g.moves.length,
+      timeControl: g.headers.TimeControl,
+      date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : undefined,
+    });
+    opts.existing.add(id);
+  }
+  return { added, skipped, errors };
+}
+
+function detectColor(g: ParsedGame, names: string[]): Color | null {
+  const w = (g.headers.White ?? '').toLowerCase();
+  const b = (g.headers.Black ?? '').toLowerCase();
+  if (names.includes(w)) return 'w';
+  if (names.includes(b)) return 'b';
+  return null;
+}

@@ -135,11 +135,15 @@ export function moveMotifs(fenBefore: string, move: Move): Motif[] {
   }
 
   // --- pins & skewers created by the moved piece ---
-  for (const [df, dr] of sliderDirs(piece.type)) {
+  const moverLoss = piece.type === 'k' ? 0 : see(after, to, opp);
+  for (const [df, dr] of moverLoss > 0.1 ? [] : sliderDirs(piece.type)) {
     const hits = rayHits(after, to, df, dr);
     if (hits.length < 2) continue;
     const [a, c] = hits.map((i) => after.sq[i]!);
     if (a.color !== opp || c.color !== opp) continue;
+    // The front piece must not simply be able to take the attacker on equal terms.
+    const frontHitsBack = attacksFrom(after, hits[0]).includes(to);
+    if (frontHitsBack && a.type !== 'k' && val(a.type) <= val(piece.type) + 0.5) continue;
     if (c.type === 'k' || (val(c.type) > val(a.type) + 0.5 && val(c.type) >= 5)) {
       if (val(a.type) < val(piece.type) && attackersOf(after, hits[0], opp).length > 0 && c.type !== 'k') continue;
       motifs.push({
@@ -150,7 +154,11 @@ export function moveMotifs(fenBefore: string, move: Move): Motif[] {
             : `Pins the ${name(a.type)} on ${sqName(hits[0])} to the ${name(c.type)}.`,
         squares: [sqName(hits[0]), sqName(hits[1])],
       });
-    } else if ((a.type === 'k' || val(a.type) > val(c.type) + 0.5) && val(a.type) >= 5) {
+    } else if (
+      (a.type === 'k' || val(a.type) > val(piece.type) + 0.5) &&
+      (a.type === 'k' || val(a.type) > val(c.type) + 0.5) &&
+      (attackersOf(after, hits[1], opp).length === 0 || val(c.type) >= val(piece.type))
+    ) {
       motifs.push({
         kind: 'skewer',
         text: `Skewer: the ${a.type === 'k' ? 'king' : name(a.type)} must move and the ${name(c.type)} on ${sqName(

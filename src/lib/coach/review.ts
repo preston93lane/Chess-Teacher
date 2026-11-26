@@ -27,7 +27,7 @@ export interface GameReview {
 export interface ReviewProgress {
   done: number;
   total: number;
-  partial?: GameReview;
+  verifying?: { done: number; total: number };
 }
 
 export async function reviewGame(
@@ -83,21 +83,53 @@ export async function reviewGame(
     opts.onProgress?.({ done: i + 1, total });
   }
 
-  const moves: MoveReview[] = [];
-  for (let i = 0; i < sans.length; i++) {
-    const r = reviewMove({
-      ply: i,
-      fenBefore: fens[i],
-      uci: ucis[i],
-      before: analyses[i],
-      after: analyses[i + 1]?.[0],
-      isBook: i < bookPly,
-      bookNote: bookNotes[i],
-      openingName: i < bookPly ? opening?.name : undefined,
-      prevClass: moves[i - 1]?.cls,
-      prevMoveTo: movesTo[i - 1],
-    });
-    moves.push(r);
+  const buildReviews = () => {
+    const out: MoveReview[] = [];
+    for (let i = 0; i < sans.length; i++) {
+      out.push(
+        reviewMove({
+          ply: i,
+          fenBefore: fens[i],
+          uci: ucis[i],
+          before: analyses[i],
+          after: analyses[i + 1]?.[0],
+          isBook: i < bookPly,
+          bookNote: bookNotes[i],
+          openingName: i < bookPly ? opening?.name : undefined,
+          prevClass: out[i - 1]?.cls,
+          prevMoveTo: movesTo[i - 1],
+        }),
+      );
+    }
+    return out;
+  };
+  let moves = buildReviews();
+
+  // Verification pass: anything the coach wants to call out is re-checked deeper,
+  // because a shallow search can miss quiet sacrifices and mates.
+  const verifyDepth = depth + 4;
+  const verified = new Set<number>();
+  for (let round = 0; round < 2; round++) {
+    const flagged = moves.filter((m) => [...BAD_CLASSES, 'brilliant', 'great'].includes(m.cls)).map((m) => m.ply);
+    const positions = new Set<number>();
+    for (const p of flagged) {
+      positions.add(p);
+      positions.add(p + 1);
+    }
+    const todo = [...positions].filter((i) => !verified.has(i) && i < fens.length && analyses[i]);
+    if (!todo.length) break;
+    let done = 0;
+    for (const i of todo) {
+      if (opts.signal?.cancelled) throw new Error('cancelled');
+      const res = await engine.analyze(fens[i], { depth: verifyDepth, multipv: i < fens.length - 1 ? 2 : 1 });
+      if (res.lines.length) {
+        analyses[i] = res.lines;
+        evals[i] = { cp: res.lines[0].cp, mate: res.lines[0].mate };
+      }
+      verified.add(i);
+      opts.onProgress?.({ done: total, total, verifying: { done: ++done, total: todo.length } });
+    }
+    moves = buildReviews();
   }
   return summarise({ depth, moves, evals, opening, bookPly });
 }

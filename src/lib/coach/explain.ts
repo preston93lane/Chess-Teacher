@@ -26,7 +26,7 @@ import {
   rankOf,
   see,
 } from './board';
-import { formatScore, lineScore, moveAccuracy, winPct, type Score } from './eval';
+import { describeScore, formatScore, lineScore, moveAccuracy, winPct, type Score } from './eval';
 import { analyzePosition, STRUCTURES, type PositionFeatures } from './structure';
 import { lineOutcome, materialPhrase, moveMotifs, type Motif } from './tactics';
 
@@ -255,12 +255,13 @@ export function describeMove(fenBefore: string, move: Move, motifs?: Motif[], pr
     const f = toSq[0];
     const features = analyzePosition(new Chess(fenBefore).fen());
     const passedBefore = features[mover].passed.includes(move.from);
-    const hitsPawn = attacksFrom(after, to).some((i) => after.sq[i]?.type === 'p' && after.sq[i]?.color === opp);
+    const hitPawnIdx = attacksFrom(after, to).find((i) => after.sq[i]?.type === 'p' && after.sq[i]?.color === opp);
+    const hitsPawn = hitPawnIdx !== undefined;
     const hitsPiece = attacksFrom(after, to).find((i) => after.sq[i] && after.sq[i]!.type !== 'p' && after.sq[i]!.color === opp);
     if (passedBefore) out.push(`Pushes the passed pawn to ${toSq}.`);
     else if (hitsPiece !== undefined && !m.some((x) => x.kind === 'fork'))
       out.push(`Gains time by hitting the ${name(after.sq[hitsPiece]!.type)}.`);
-    else if (hitsPawn) out.push(`A pawn break: challenges the pawn chain from ${toSq}.`);
+    else if (hitsPawn) out.push(`Strikes at the ${String.fromCharCode(97 + (hitPawnIdx! % 8))}${Math.floor(hitPawnIdx! / 8) + 1}-pawn — a pawn break.`);
     else if (CENTER.has(toSq) || ((f === 'c' || f === 'f') && fullmove <= 10)) out.push('Claims space in the center.');
     else if ((toSq === 'h3' || toSq === 'h6' || toSq === 'a3' || toSq === 'a6') && fullmove <= 20)
       out.push(
@@ -304,6 +305,13 @@ export function describeMove(fenBefore: string, move: Move, motifs?: Motif[], pr
 
   const attack = m.find((x) => x.kind === 'attack');
   if (attack && out.length < 2) out.push(attack.text);
+
+  // Queen trade offers and plain checks
+  if (piece === 'q' && !move.captured) {
+    const theirQueen = after.sq.findIndex((p) => p?.type === 'q' && p.color === opp);
+    if (theirQueen >= 0 && attacksFrom(after, theirQueen).includes(to)) out.push('Offers a queen trade.');
+  }
+  if (!out.length && m.some((x) => x.kind === 'check')) out.push(`Gives check with the ${name(piece)}, gaining time.`);
 
   if (!out.length) {
     const mobBefore = mobility(before, from);
@@ -469,11 +477,16 @@ function explain(r: MoveReview, move: Move, motifs: Motif[], input: ReviewInput)
       !move.san.startsWith('O-O')
     ) {
       headline = 'Moves an already-developed piece instead of developing.';
-      reasons.push(`Still at home: ${fb[me].undeveloped.join(', ')}. Tempo matters in the opening.`);
-    } else if (replyMove) {
-      const replyDesc = describeMove(r.fenAfter, replyMove);
-      headline = `Gives ${sideName(other(mover))} ${replyMove.san}.`;
-      reasons.push(`${capitalize(lowerFirst(replyDesc[0] ?? 'A strong reply.'))}`);
+      reasons.push(`Still at home: ${fb[me].undeveloped.map((q) => `${PIECE_NAME[fb.board.sq[idx(q)]?.type ?? 'n']} on ${q}`).join(', ')}. Tempo matters in the opening.`);
+    } else if (replyMove && reply) {
+      const replyMotifs = moveMotifs(r.fenAfter, replyMove);
+      const replyDesc = describeMove(r.fenAfter, replyMove, replyMotifs);
+      const sac = replyMotifs.some((x) => x.kind === 'sacrifice' || x.kind === 'hangs');
+      const prefix = replyMove.color === 'b' ? '…' : '';
+      headline = sac ? `Allows the sacrifice ${prefix}${replyMove.san}!` : `Allows ${prefix}${replyMove.san}.`;
+      const lineText = formatLine(r.fenAfter, pvToSan(r.fenAfter, reply.pv, 6));
+      const verdict = r.evalAfter ? describeScore(r.evalAfter).toLowerCase() : '';
+      reasons.push(`${capitalize(lowerFirst(replyDesc[0] ?? 'A strong reply.'))}${lineText ? ` After ${lineText}` : ''}${verdict ? ` — ${verdict}.` : '.'}`);
     } else {
       headline = 'Not the most accurate.';
     }
@@ -547,7 +560,8 @@ export function positionReport(fen: string, forColor?: Color): PositionReport {
 
   // Development
   if (f.phase === 'opening' && mine.undeveloped.length) {
-    add(`Finish development: ${mine.undeveloped.map((s) => s).join(', ')} still at home.`, 8, mine.undeveloped);
+    const names = mine.undeveloped.map((s) => `${PIECE_NAME[f.board.sq[idx(s)]?.type ?? 'n']} on ${s}`);
+    add(`Finish development: the ${names.join(' and the ')} ${names.length > 1 ? 'are' : 'is'} still at home.`, 8, mine.undeveloped);
   }
 
   // Files

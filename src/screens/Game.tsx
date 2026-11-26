@@ -238,18 +238,26 @@ function LiveGameView({ game }: { game: LiveGame }) {
       try {
         const before = analysis && analysis.fen === fenBefore ? analysis : await engine.analyze(fenBefore, { depth, multipv: 3 });
         const after = gameOverInfo(fenAfter) ? null : await engine.analyze(fenAfter, { depth, multipv: 1 });
-        const review = reviewMove({
-          ply,
-          fenBefore,
-          uci: uciOf(m),
-          before: before.lines,
-          after: after?.lines[0],
-          isBook: inBook,
-          bookNote,
-          openingName: inBook ? opening?.name : undefined,
-          prevClass: useSession.getState().game?.reviews[ply - 1]?.cls,
-          prevMoveTo: moves[ply - 1]?.to,
-        });
+        const mk = (b: AnalysisResult, a: AnalysisResult | null) =>
+          reviewMove({
+            ply,
+            fenBefore,
+            uci: uciOf(m),
+            before: b.lines,
+            after: a?.lines[0],
+            isBook: inBook,
+            bookNote,
+            openingName: inBook ? opening?.name : undefined,
+            prevClass: useSession.getState().game?.reviews[ply - 1]?.cls,
+            prevMoveTo: moves[ply - 1]?.to,
+          });
+        let review = mk(before, after);
+        if (!inBook && [...BAD_CLASSES, 'brilliant', 'great'].includes(review.cls)) {
+          // Double-check critical verdicts with a deeper search before showing them.
+          const deepBefore = await engine.analyze(fenBefore, { depth: depth + 4, multipv: 3 });
+          const deepAfter = after ? await engine.analyze(fenAfter, { depth: depth + 4, multipv: 1 }) : null;
+          review = mk(deepBefore, deepAfter);
+        }
         if (!inBook && bookNote) review.notes.unshift(bookNote);
         const cur = useSession.getState().game;
         if (cur && cur.id === game.id) patch({ reviews: { ...cur.reviews, [ply]: review } });

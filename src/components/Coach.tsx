@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Lightbulb, Target, Shield, Eye, Sparkles, BookOpen } from 'lucide-react';
+import { Lightbulb, Target, Shield, Eye, Sparkles, BookOpen, ScanSearch } from 'lucide-react';
+import { InsightsPanel } from './Insights';
 import type { AnalysisResult, EngineLine } from '../lib/engine/stockfish';
 import { engine, CancelledError } from '../lib/engine/stockfish';
 import {
@@ -24,11 +25,15 @@ export function VerdictCard({
   onShowBetter,
   showingBetter,
   label,
+  showEval = true,
+  onBreakdown,
 }: {
   review: MoveReview;
   onShowBetter?: () => void;
   showingBetter?: boolean;
   label?: string;
+  showEval?: boolean;
+  onBreakdown?: () => void;
 }) {
   const info = CLASS_INFO[review.cls];
   return (
@@ -40,14 +45,16 @@ export function VerdictCard({
         <p className="verdict-kicker">
           <span className={`tone-text-${info.tone}`}>{info.label}</span>
           <span className="verdict-move">{label ?? review.san}</span>
-          {review.evalAfter && <span className="verdict-eval">{formatScore(review.evalAfter)}</span>}
+          {showEval && review.evalAfter && <span className="verdict-eval">{formatScore(review.evalAfter)}</span>}
         </p>
         <h3 className="verdict-headline">{review.headline}</h3>
-        {review.notes.map((n, i) => (
-          <p key={i} className="verdict-note">
-            {n}
-          </p>
-        ))}
+        {review.notes
+          .filter((n) => showEval || !n.startsWith('Evaluation '))
+          .map((n, i) => (
+            <p key={i} className="verdict-note">
+              {n}
+            </p>
+          ))}
         {review.better && (
           <div className="verdict-better">
             <p>{review.better}</p>
@@ -58,6 +65,12 @@ export function VerdictCard({
               </button>
             )}
           </div>
+        )}
+        {onBreakdown && (
+          <button className="btn btn-secondary btn-sm verdict-breakdown" onClick={onBreakdown}>
+            <ScanSearch size={16} />
+            <span>Break it down</span>
+          </button>
         )}
       </div>
     </article>
@@ -198,7 +211,7 @@ export function HintPanel({
     }
   };
 
-  const labels = ['Get a hint', 'What’s the plan?', 'Which pieces?', 'Show the best move', 'All hints shown'];
+  const labels = ['Get a hint', 'What matters here?', 'Which pieces?', 'Show the best move', 'All hints shown'];
   const icons = [Lightbulb, Shield, Target, Eye, Sparkles];
   const Icon = icons[level];
 
@@ -213,8 +226,8 @@ export function HintPanel({
       )}
       {level >= 2 && (
         <div className="hint-step">
-          <span className="hint-tag">Plan</span>
-          <PositionReportView fen={fen} forColor={me} compact />
+          <span className="hint-tag">What matters</span>
+          <InsightsPanel fen={fen} forColor={me} title={null} max={4} />
         </div>
       )}
       {level >= 3 && (

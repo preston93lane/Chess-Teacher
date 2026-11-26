@@ -403,7 +403,7 @@ function explain(r: MoveReview, move: Move, motifs: Motif[], input: ReviewInput)
       reasons.push(`After ${replyLineText} there is no defence.`);
     } else {
       const replyMotifs = moveMotifs(r.fenAfter, replyMove);
-      const loss = -out.material; // mover's perspective
+      const loss = out.material; // what the opponent's best line wins from the mover
       const lostPhrase = materialPhrase(out.lost[other(mover)], out.lost[mover], -loss);
       const capturedSq = replyMove.captured ? replyMove.to : undefined;
       const hangingNow = hangingPieces(after, mover);

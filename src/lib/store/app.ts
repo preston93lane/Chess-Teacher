@@ -13,6 +13,10 @@ export interface Settings {
   coordinates: boolean;
   sound: boolean;
   coachLive: boolean;
+  /** Coach comments on what matters before each of your moves. */
+  coachTalk: boolean;
+  /** Evaluation bar and numeric evaluations. */
+  showEval: boolean;
   analysisDepth: number;
   autoQueen: boolean;
   /** Usernames used to work out which side you played in imported games. */
@@ -138,6 +142,8 @@ export const defaultSettings: Settings = {
   coordinates: true,
   sound: true,
   coachLive: true,
+  coachTalk: true,
+  showEval: true,
   analysisDepth: 13,
   autoQueen: true,
   usernames: [],

@@ -84,6 +84,8 @@ export function SettingsScreen() {
 
       <Section title="Coach & engine">
         <Toggle checked={s.coachLive} onChange={(v) => update({ coachLive: v })} label="Live coach by default" hint="Grade and explain each move during games against the coach." />
+        <Toggle checked={s.coachTalk} onChange={(v) => update({ coachTalk: v })} label="Position talk" hint="Before each of your moves, the coach points out what matters in the position without naming a move." />
+        <Toggle checked={s.showEval} onChange={(v) => update({ showEval: v })} label="Evaluation bar & numbers" hint="Show the engine’s score. Turn off to judge positions yourself." />
         <Toggle checked={s.autoQueen} onChange={(v) => update({ autoQueen: v })} label="Always promote to a queen" />
         <div className="field mt16">
           <span className="field-label">Analysis depth</span>

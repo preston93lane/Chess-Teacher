@@ -18,6 +18,7 @@ export function PlaySetup() {
   const q = query(path);
   const games = useApp((s) => s.games);
   const settings = useApp((s) => s.settings);
+  const updateSettings = useApp((s) => s.updateSettings);
   const live = useSession((s) => s.game);
   const setGame = useSession((s) => s.setGame);
   const rating = estimateRating(games);
@@ -51,6 +52,7 @@ export function PlaySetup() {
       presetSans = line.sans;
     }
     engine.newGame();
+    updateSettings({ coachLive });
     setGame({
       id: uid('g'),
       config: {
@@ -181,6 +183,18 @@ export function PlaySetup() {
           onChange={setCoachLive}
           label="Live coach"
           hint="After each of your moves the coach grades it and explains what changed. Turn off for a serious game; you can still review afterwards."
+        />
+        <Toggle
+          checked={settings.coachTalk}
+          onChange={(v) => updateSettings({ coachTalk: v })}
+          label="Position talk"
+          hint="Before your move, the coach names what matters — threats, loose pieces, pins, space — but never the move."
+        />
+        <Toggle
+          checked={settings.showEval}
+          onChange={(v) => updateSettings({ showEval: v })}
+          label="Evaluation bar & numbers"
+          hint="You can change all of these mid-game from the sliders button."
         />
       </Section>
 

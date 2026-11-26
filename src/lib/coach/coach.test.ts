@@ -108,3 +108,45 @@ describe('content', () => {
       }
   });
 });
+
+import { staticInsights, engineInsights } from './insights';
+
+describe('what-matters insights', () => {
+  const ids = (fen: string, c: 'w' | 'b') => staticInsights(fen, c).map((i) => i.id);
+  it('spots a pinned knight for the side that suffers it', () => {
+    const fen = play('1.e4 e5 2.Nf3 Nc6 3.Bb5 d6').fen();
+    expect(ids(fen, 'b')).toContain('pinned-c6');
+    expect(ids(fen, 'w')).toContain('their-pin-c6');
+  });
+  it('warns about a knight fork', () => {
+    expect(ids('r3k3/8/8/1N6/8/8/8/4K3 b - - 0 1', 'b').some((i) => i.startsWith('fork-'))).toBe(true);
+  });
+  it('warns about a weak back rank', () => {
+    expect(ids('3r2k1/5ppp/8/8/8/8/5PPP/6K1 w - - 0 1', 'w')).toContain('back-rank');
+  });
+  it('notices doubled pawns', () => {
+    const fen = play('1.d4 Nf6 2.c4 e6 3.Nc3 Bb4 4.a3 Bxc3+ 5.bxc3').fen();
+    expect(ids(fen, 'w')).toContain('doubled-c');
+  });
+  it('flags a hidden tactic without naming the move', () => {
+    const fen = 'r3k3/8/8/1N6/8/8/8/4K3 w - - 0 1';
+    const ins = engineInsights(fen, 'w', [{ multipv: 1, depth: 12, cp: 500, pv: ['b5c7', 'e8d7', 'c7a8'] }]);
+    const tactic = ins.find((i) => i.id === 'tactic');
+    expect(tactic).toBeTruthy();
+    expect(tactic!.text).not.toMatch(/Nc7/);
+  });
+});
+
+describe('material loss wording', () => {
+  it('calls an unsound bishop sacrifice a hung piece', () => {
+    const fen = 'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
+    const r = reviewMove({
+      ply: 6,
+      fenBefore: fen,
+      uci: 'c4f7',
+      before: [{ multipv: 1, depth: 14, cp: 25, pv: ['d2d3'] }],
+      after: { multipv: 1, depth: 14, cp: -250, pv: ['e8f7', 'e1g1', 'd7d6'] },
+    });
+    expect(r.headline).toMatch(/Hangs the bishop/);
+  });
+});

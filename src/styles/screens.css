@@ -242,3 +242,65 @@
   .board-screen-page .controls { margin-top: 2px; }
   .board-screen { gap: 10px; }
 }
+
+/* ---------- What matters (insights) ---------- */
+.insights { display: flex; flex-direction: column; gap: 8px; }
+.insights-title { font-size: 15px; }
+.insight-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.insight {
+  display: grid; grid-template-columns: 28px 1fr; gap: 10px; width: 100%; text-align: left; padding: 10px 12px;
+  border-radius: var(--radius); border: 1px solid var(--line-soft); background: var(--surface-2);
+}
+.insight.is-static { cursor: default; }
+.insight:not(.is-static):hover { border-color: var(--line); }
+.insight.is-on { border-color: var(--text); }
+.insight-icon { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; }
+.insight-danger .insight-icon { background: color-mix(in srgb, var(--t-blunder) 18%, transparent); color: var(--t-blunder); }
+.insight-opportunity .insight-icon { background: color-mix(in srgb, var(--t-brilliant) 18%, transparent); color: var(--t-brilliant); }
+.insight-plan .insight-icon { background: color-mix(in srgb, var(--t-great) 18%, transparent); color: var(--t-great); }
+.insight-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.insight-theme { font-weight: 750; font-size: 14.5px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.insight-kind { font-size: 12px; font-weight: 650; color: var(--faint); }
+.insight-text { font-size: 14px; color: var(--muted); line-height: 1.45; }
+.insight-show { font-size: 12.5px; font-weight: 700; color: var(--text); text-decoration: underline; text-decoration-color: var(--faint); text-underline-offset: 3px; margin-top: 2px; }
+
+.verdict-breakdown { margin-top: 12px; }
+
+/* ---------- Move breakdown overlay ---------- */
+.breakdown {
+  position: fixed; inset: 0; z-index: 85; background: var(--bg); overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: calc(var(--safe-t) + 8px) 8px calc(var(--safe-b) + 24px); animation: fade 0.15s ease;
+}
+.breakdown-inner { max-width: 1180px; margin: 0 auto; }
+.breakdown-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 4px 8px 8px; }
+.breakdown-kicker { font-size: 13px; font-weight: 700; color: var(--faint); }
+.breakdown-title { font-size: 28px; font-variation-settings: 'wdth' 70; font-weight: 850; display: flex; align-items: center; gap: 10px; }
+.breakdown-steps { display: flex; gap: 6px; padding: 0 8px 12px; overflow-x: auto; scrollbar-width: none; }
+.breakdown-step {
+  display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; height: 36px; padding: 0 12px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--muted); font-weight: 680; font-size: 14px;
+}
+.breakdown-step .num { font-weight: 850; }
+.breakdown-step.is-on { background: var(--primary); color: var(--primary-ink); border-color: transparent; }
+.breakdown .side-col { padding: 0 8px; }
+.breakdown-nav { display: flex; justify-content: space-between; gap: 10px; margin-top: 8px; }
+@media (min-width: 900px) {
+  .breakdown { padding: 28px 32px; }
+  .breakdown .side-col { position: static; max-height: none; }
+}
+.line-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.line-step { width: 100%; text-align: left; border: 0; border-radius: 10px; background: transparent; padding: 8px 10px; font-size: 14.5px; color: var(--muted); }
+.line-step:hover { background: var(--surface); }
+.line-step.is-on { background: var(--surface-2); color: var(--text); font-weight: 650; }
+.candidate {
+  display: flex; flex-direction: column; gap: 3px; width: 100%; text-align: left; padding: 12px 14px; border-radius: var(--radius);
+  background: var(--surface); border: 1px solid var(--line-soft);
+}
+.candidate.is-on { border-color: var(--t-best); box-shadow: inset 3px 0 0 var(--t-best); }
+.candidate-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.candidate-san { font-size: 22px; font-weight: 850; font-variation-settings: 'wdth' 72; }
+.candidate-eval { color: var(--muted); font-weight: 700; }
+.candidate-compare { font-size: 13px; font-weight: 700; color: var(--t-best); }
+.candidate-reason { font-size: 14px; color: var(--muted); }
+.candidate-line { font-size: 13px; color: var(--faint); margin-top: 4px; }
+.takeaway { font-size: 20px; font-weight: 720; line-height: 1.35; font-variation-settings: 'wdth' 88; }

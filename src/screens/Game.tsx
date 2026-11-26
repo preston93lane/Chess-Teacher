@@ -9,9 +9,11 @@ import {
   Play,
   RefreshCw,
   Repeat,
+  ScanSearch,
+  SlidersHorizontal,
   Undo2,
 } from 'lucide-react';
-import { Chess, uciOf, type PieceSymbol, type Square } from '../lib/chess/core';
+import { Chess, applySan, uciOf, type PieceSymbol, type Square } from '../lib/chess/core';
 import { useSession, type LiveGame } from '../lib/gameSession';
 import { getBot, botMove } from '../lib/bots';
 import { engine, CancelledError, type AnalysisResult } from '../lib/engine/stockfish';
@@ -28,7 +30,9 @@ import { Board, type Arrow, type Mark } from '../components/Board';
 import { EvalBar } from '../components/EvalBar';
 import { MoveList } from '../components/MoveList';
 import { VerdictCard, HintPanel, PositionReportView } from '../components/Coach';
-import { Button, Empty, Header, IconButton, Sheet, Spinner } from '../components/ui';
+import { Button, Empty, Header, IconButton, Sheet, Spinner, Toggle } from '../components/ui';
+import { InsightsPanel } from '../components/Insights';
+import { MoveBreakdown } from '../components/MoveBreakdown';
 import { toast } from '../components/Toast';
 
 function replay(startFen: string, sans: string[]) {
@@ -75,6 +79,7 @@ function LiveGameView({ game }: { game: LiveGame }) {
   const addGame = useApp((s) => s.addGame);
   const logActivity = useApp((s) => s.logActivity);
   const markPlanStep = useApp((s) => s.markPlanStep);
+  const updateSettings = useApp((s) => s.updateSettings);
   const { config } = game;
   const bot = getBot(config.botId);
   const opening = config.openingId ? getOpening(config.openingId) : undefined;
@@ -97,6 +102,26 @@ function LiveGameView({ game }: { game: LiveGame }) {
   const [confirmResign, setConfirmResign] = useState(false);
   const thinkingFor = useRef<string | null>(null);
   const depth = settings.analysisDepth;
+  const [optionsOpen, setOptionsOpen] = useState(false);
+  const [breakdown, setBreakdown] = useState<{ fenBefore: string; uci: string } | null>(null);
+  const [deepInsight, setDeepInsight] = useState(false);
+
+  useEffect(() => setDeepInsight(false), [fen]);
+
+  // The user's most recent move (for "Break it down").
+  const lastUserPly = useMemo(() => {
+    const startTurn = config.startFen.split(' ')[1];
+    for (let p = game.sans.length - 1; p >= config.presetSans.length; p--) {
+      const color = (p % 2 === 0) === (startTurn === 'w') ? 'w' : 'b';
+      if (color === config.userColor) return p;
+    }
+    return -1;
+  }, [game.sans.length, config.startFen, config.presetSans.length, config.userColor]);
+
+  const openBreakdown = (ply: number) => {
+    const m = applySan(fens[ply], game.sans[ply]);
+    if (m) setBreakdown({ fenBefore: fens[ply], uci: uciOf(m.move) });
+  };
 
   // ---- prefetch analysis on the user's turn (for hints and move review) ----
   useEffect(() => {
@@ -375,13 +400,18 @@ function LiveGameView({ game }: { game: LiveGame }) {
       <Header
         title={config.title ? `${config.title}` : `vs ${bot.name}`}
         backTo="/play"
+        actions={
+          <IconButton label="Coaching options" onClick={() => setOptionsOpen(true)}>
+            <SlidersHorizontal size={20} />
+          </IconButton>
+        }
         sub={game.status === 'ended' ? `${game.result} · ${game.endReason}` : config.coachLive ? 'Coach is watching every move' : 'Coach off — review after the game'}
       />
       <div className="board-screen">
         <div className="board-col">
           {tag(top)}
           <div className="board-wrap">
-            {config.coachLive && <EvalBar score={evalScore} orientation={orientation} pending={!evalScore} />}
+            {settings.showEval && <EvalBar score={evalScore} orientation={orientation} pending={!evalScore} />}
             <div className="board-holder">
               <Board
                 fen={shownFen}
@@ -411,6 +441,9 @@ function LiveGameView({ game }: { game: LiveGame }) {
               </IconButton>
               <IconButton label="Hint" onClick={() => setTab('coach')} className={tab === 'coach' ? 'is-on' : ''}>
                 <Lightbulb />
+              </IconButton>
+              <IconButton label="Break down my last move" onClick={() => openBreakdown(lastUserPly)} disabled={lastUserPly < 0}>
+                <ScanSearch />
               </IconButton>
               <IconButton label="Flip board" onClick={() => setOrientation(orientation === 'w' ? 'b' : 'w')}>
                 <RefreshCw />
@@ -451,7 +484,13 @@ function LiveGameView({ game }: { game: LiveGame }) {
               {reviewing && <div className="panel panel-tight"><Spinner label="Coach is looking at your move…" /></div>}
               {!reviewing && shownReview && (
                 <>
-                  <VerdictCard review={shownReview} onShowBetter={shownReview.better ? () => setShowBetter(!showBetter) : undefined} showingBetter={showBetter} />
+                  <VerdictCard
+                    review={shownReview}
+                    onShowBetter={shownReview.better ? () => setShowBetter(!showBetter) : undefined}
+                    showingBetter={showBetter}
+                    showEval={settings.showEval}
+                    onBreakdown={() => openBreakdown(shownReview.ply)}
+                  />
                   {isLive && game.status === 'playing' && ['mistake', 'blunder', 'miss'].includes(shownReview.cls) && shownReview.ply === game.sans.length - (turn === config.userColor ? 2 : 1) && (
                     <Button variant="secondary" icon={<Undo2 size={16} />} onClick={takeBack}>
                       Take back and find a better move
@@ -466,6 +505,29 @@ function LiveGameView({ game }: { game: LiveGame }) {
                     ? 'Make a move. The coach will grade it and explain the ideas.'
                     : 'Live coaching is off. Use hints if you get stuck, and review the game when it ends.'}
                 </p>
+              )}
+              {!reviewing && !shownReview && lastUserPly >= 0 && (
+                <Button variant="secondary" icon={<ScanSearch size={16} />} onClick={() => openBreakdown(lastUserPly)}>
+                  Break down my last move
+                </Button>
+              )}
+              {isLive && userTurn && (settings.coachTalk || deepInsight) && (
+                <div className="panel panel-tight">
+                  <InsightsPanel
+                    fen={fen}
+                    forColor={config.userColor}
+                    deep={deepInsight}
+                    lines={analysis?.fen === fen ? analysis.lines : null}
+                    max={deepInsight ? 6 : 3}
+                    title={deepInsight ? 'What matters here' : 'Before you move'}
+                    onMarks={setMarks}
+                  />
+                </div>
+              )}
+              {isLive && userTurn && !deepInsight && (
+                <button className="link-btn" onClick={() => setDeepInsight(true)}>
+                  <ScanSearch size={14} /> {settings.coachTalk ? 'Look deeper: threats and tactics' : 'What matters here?'}
+                </button>
               )}
               {isLive && userTurn && (
                 <HintPanel
@@ -494,6 +556,41 @@ function LiveGameView({ game }: { game: LiveGame }) {
           )}
         </div>
       </div>
+
+      <Sheet open={optionsOpen} onClose={() => setOptionsOpen(false)} title="Coaching options">
+        <Toggle
+          checked={config.coachLive}
+          onChange={(v) => {
+            patch({ config: { ...config, coachLive: v } });
+            updateSettings({ coachLive: v });
+          }}
+          label="Live coach"
+          hint="Grade and explain each of your moves as you play."
+        />
+        <Toggle
+          checked={settings.coachTalk}
+          onChange={(v) => updateSettings({ coachTalk: v })}
+          label="Position talk"
+          hint="Before your move, the coach points out what matters — loose pieces, pins, space — without naming a move."
+        />
+        <Toggle
+          checked={settings.showEval}
+          onChange={(v) => updateSettings({ showEval: v })}
+          label="Evaluation bar & numbers"
+          hint="Hide the engine’s score if you want to judge positions yourself."
+        />
+        <p className="muted small mt12">Hints and “Break it down” stay available either way. These choices become your defaults for new games.</p>
+      </Sheet>
+
+      {breakdown && (
+        <MoveBreakdown
+          fenBefore={breakdown.fenBefore}
+          uci={breakdown.uci}
+          depth={depth}
+          showEval={settings.showEval}
+          onClose={() => setBreakdown(null)}
+        />
+      )}
 
       <Sheet open={confirmResign} onClose={() => setConfirmResign(false)} title="Resign this game?">
         <p className="muted">The game is saved to your history so you can review it.</p>

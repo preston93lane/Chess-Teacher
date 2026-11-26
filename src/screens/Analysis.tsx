@@ -12,6 +12,7 @@ import {
   Download,
   X,
   FileInput,
+  Gauge,
 } from 'lucide-react';
 import { Chess, START_FEN, formatLine, uciOf, type Color, type PieceSymbol, type Square } from '../lib/chess/core';
 import { parsePgn, parseMovetext, toPgn } from '../lib/chess/pgn';
@@ -29,6 +30,9 @@ import { EvalBar } from '../components/EvalBar';
 import { EvalGraph } from '../components/EvalGraph';
 import { MoveList } from '../components/MoveList';
 import { VerdictCard, EngineLines, PositionReportView } from '../components/Coach';
+import { InsightsPanel } from '../components/Insights';
+import { MoveBreakdown } from '../components/MoveBreakdown';
+import type { Mark } from '../components/Board';
 import { Button, Glyph, Header, IconButton, Meter, Segmented, Sheet, Spinner, Toggle } from '../components/ui';
 import { toast } from '../components/Toast';
 import { getOpening } from '../lib/openings/book';
@@ -90,6 +94,10 @@ function AnalysisView({ gameId, source, autoReview }: { gameId?: string; source:
   const addPuzzle = useApp((s) => s.addPuzzle);
   const markPlanStep = useApp((s) => s.markPlanStep);
   const settings = useApp((s) => s.settings);
+  const updateSettings = useApp((s) => s.updateSettings);
+  const [breakdown, setBreakdown] = useState<{ fenBefore: string; uci: string } | null>(null);
+  const [marks, setMarks] = useState<Mark[]>([]);
+  const [showStructure, setShowStructure] = useState(false);
   const free = !gameId;
   const [mainline, setMainline] = useState<string[]>(source.sans);
   const [startFen, setStartFen] = useState(source.startFen);
@@ -242,6 +250,8 @@ function AnalysisView({ gameId, source, autoReview }: { gameId?: string; source:
     }
   };
 
+  useEffect(() => setMarks([]), [fen]);
+
   const go = (p: number) => {
     setExplore(null);
     setShowBetter(false);
@@ -262,7 +272,7 @@ function AnalysisView({ gameId, source, autoReview }: { gameId?: string; source:
 
   const arrows: Arrow[] = [];
   if (showBetter && currentReview?.bestUci) arrows.push({ from: currentReview.bestUci.slice(0, 2), to: currentReview.bestUci.slice(2, 4), color: 'y' });
-  else if (engineOn && live?.lines[0] && !progress) arrows.push({ from: live.lines[0].pv[0].slice(0, 2), to: live.lines[0].pv[0].slice(2, 4), color: 'b' });
+  else if (settings.showEval && engineOn && live?.lines[0] && !progress) arrows.push({ from: live.lines[0].pv[0].slice(0, 2), to: live.lines[0].pv[0].slice(2, 4), color: 'b' });
 
   const badge = currentReview && lastMove ? { sq: lastMove.to, cls: currentReview.cls } : null;
   const evalScore = live && live.fen === fen ? lineScore(live.lines[0]) : !explore && review ? review.evals[ply] : undefined;
@@ -323,6 +333,13 @@ function AnalysisView({ gameId, source, autoReview }: { gameId?: string; source:
                 <FileInput size={20} />
               </IconButton>
             )}
+            <IconButton
+              label={settings.showEval ? 'Hide evaluation' : 'Show evaluation'}
+              onClick={() => updateSettings({ showEval: !settings.showEval })}
+              className={settings.showEval ? 'is-on' : ''}
+            >
+              <Gauge size={20} />
+            </IconButton>
             <IconButton label="Export PGN" onClick={exportPgn}>
               <Download size={20} />
             </IconButton>
@@ -337,7 +354,7 @@ function AnalysisView({ gameId, source, autoReview }: { gameId?: string; source:
       <div className="board-screen">
         <div className="board-col">
           <div className="board-wrap">
-            <EvalBar score={evalScore} orientation={orientation} pending={!evalScore} />
+            {settings.showEval && <EvalBar score={evalScore} orientation={orientation} pending={!evalScore} />}
             <div className="board-holder">
               <Board
                 fen={fen}
@@ -347,6 +364,7 @@ function AnalysisView({ gameId, source, autoReview }: { gameId?: string; source:
                 lastMove={lastMove ? [lastMove.from, lastMove.to] : null}
                 arrows={arrows}
                 badge={badge}
+                marks={marks}
               />
             </div>
           </div>
@@ -414,14 +432,35 @@ function AnalysisView({ gameId, source, autoReview }: { gameId?: string; source:
           {tab === 'coach' && (
             <div className="stack">
               {currentReview ? (
-                <VerdictCard review={currentReview} onShowBetter={currentReview.better ? () => setShowBetter(!showBetter) : undefined} showingBetter={showBetter} />
+                <VerdictCard
+                  review={currentReview}
+                  onShowBetter={currentReview.better ? () => setShowBetter(!showBetter) : undefined}
+                  showingBetter={showBetter}
+                  showEval={settings.showEval}
+                  onBreakdown={() => setBreakdown({ fenBefore: currentReview.fenBefore, uci: currentReview.uci })}
+                />
               ) : explore ? (
                 <div className="panel panel-tight"><Spinner label="Coach is looking at that move…" /></div>
               ) : null}
               <div className="panel">
-                <h4 className="mb8">{sideToMove === 'w' ? 'White' : 'Black'} to move — what’s going on</h4>
-                <PositionReportView fen={fen} forColor={sideToMove} />
+                <InsightsPanel
+                  key={fen}
+                  fen={fen}
+                  forColor={sideToMove}
+                  deep={!!(live && live.fen === fen && live.depth >= 12 && live.lines.length >= 2) && !progress}
+                  lines={live && live.fen === fen ? live.lines : null}
+                  title={`${sideToMove === 'w' ? 'White' : 'Black'} to move — what matters`}
+                  onMarks={setMarks}
+                />
               </div>
+              <button className="link-btn" onClick={() => setShowStructure(!showStructure)}>
+                {showStructure ? 'Hide structure & plans' : 'Structure & long-term plans'}
+              </button>
+              {showStructure && (
+                <div className="panel">
+                  <PositionReportView fen={fen} forColor={sideToMove} />
+                </div>
+              )}
             </div>
           )}
 
@@ -469,6 +508,16 @@ function AnalysisView({ gameId, source, autoReview }: { gameId?: string; source:
           <Button variant="ghost" onClick={() => setConfirmDelete(false)}>Cancel</Button>
         </div>
       </Sheet>
+
+      {breakdown && (
+        <MoveBreakdown
+          fenBefore={breakdown.fenBefore}
+          uci={breakdown.uci}
+          depth={settings.analysisDepth}
+          showEval={settings.showEval}
+          onClose={() => setBreakdown(null)}
+        />
+      )}
 
       <LoadSheet
         open={loadOpen}

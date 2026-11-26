@@ -6,6 +6,21 @@ Outpost is a chess training app for intermediate and advanced players. It runs e
 
 **Play the coach.** Ten bot levels, from about 800 to full-strength Stockfish. With the live coach on, every move you make is graded (`!!`, `!`, `★`, `?!`, `?`, `??`…) and explained in plain language: what the move does, what it allowed, and what was better. Tiered hints go from a threat check, to the plan, to candidate pieces, to the best move. Take back a mistake and try again.
 
+**Choose how much coaching you get.** Tap the sliders button in a game, or go to Settings, to switch three things on or off:
+
+- **Live coach** grades every move.
+- **Position talk** tells you what matters before you move.
+- **Evaluation bar & numbers** hides or shows the engine's score.
+
+**Break it down.** After any move (most usefully a blunder), tap *Break it down*. You leave the game for a step-by-step walkthrough:
+
+1. What your move did.
+2. How the opponent punishes it, played out move by move.
+3. Up to three better options, each with its reasons and a line you can step through. You can also try your own move and the coach grades it.
+4. A takeaway, with what you should have noticed before moving.
+
+**What matters here.** The coach describes a position's themes without ever naming the move to play: pieces under attack, loose pieces, pins against you or your opponent, pin and skewer lines, knight-fork squares, back-rank weakness, king safety, development, the centre and space, doubled or weak pawns, passed pawns, bad bishops, open files and outposts. *Look deeper* adds what the engine sees: the opponent's threat, the fact that a tactic exists (and which kind), and moments where only one move holds. Tap a theme to highlight its squares on the board.
+
 **Opening library.** 14 openings with 58 annotated lines for both colours: Ruy Lopez, Italian, Queen's Gambit, London, Catalan, English, Najdorf, Dragon, French, Caro-Kann, King's Indian, Nimzo-Indian, Grünfeld and Slav. Each one comes with its main ideas for both sides, typical structures, middlegame plans and traps. Every line has been checked move by move with Stockfish.
 
 - **Learn** walks you through a line with commentary on each move.

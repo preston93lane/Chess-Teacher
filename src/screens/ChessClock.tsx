@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useEffect, useRef, useState } from 'react';
 import { Pause, Play, RotateCcw, Settings2, X } from 'lucide-react';
 import { formatClock } from '../lib/clock';
@@ -100,7 +101,7 @@ export function ChessClock() {
     );
   };
 
-  return (
+  return createPortal(
     <div className="cc">
       {face('top')}
       <div className="cc-bar">
@@ -131,6 +132,7 @@ export function ChessClock() {
           <Button onClick={() => { reset(); setSetup(false); }}>Set clock</Button>
         </div>
       </Sheet>
-    </div>
+    </div>,
+    document.body,
   );
 }

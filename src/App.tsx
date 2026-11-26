@@ -33,12 +33,22 @@ import { RetryMistakes } from './screens/RetryMistakes';
 import { WeeklyReport } from './screens/WeeklyReport';
 import { ArenaSetup, ArenaGameScreen } from './screens/Arena';
 import { ChessClock } from './screens/ChessClock';
+import { RepertoireList, RepertoireBuilder } from './screens/Repertoire';
+import { setCustomOpeningResolver } from './lib/openings/book';
+import { repToOpening } from './lib/repertoire';
+
+// Your own repertoires resolve as openings ("rep:<id>") for the trainers.
+setCustomOpeningResolver((id) => {
+  if (!id.startsWith('rep:')) return undefined;
+  const rep = useApp.getState().customReps[id.slice(4)];
+  return rep ? repToOpening(rep) : undefined;
+});
 
 const TABS = [
   { path: '/', label: 'Today', icon: Sunrise, match: (p: string) => p === '/' },
   { path: '/play', label: 'Play', icon: Swords, match: (p: string) => p.startsWith('/play') || p.startsWith('/clock') },
   { path: '/puzzles', label: 'Puzzles', icon: Puzzle, match: (p: string) => p.startsWith('/puzzles') },
-  { path: '/openings', label: 'Openings', icon: BookOpen, match: (p: string) => p.startsWith('/openings') || p.startsWith('/explorer') },
+  { path: '/openings', label: 'Openings', icon: BookOpen, match: (p: string) => p.startsWith('/openings') || p.startsWith('/explorer') || p.startsWith('/repertoire') },
   { path: '/train', label: 'Train', icon: Target, match: (p: string) => p.startsWith('/train') || p.startsWith('/classics') || p.startsWith('/program') || p.startsWith('/vision') || p.startsWith('/endgames') || p.startsWith('/insights') || p.startsWith('/report') },
   { path: '/games', label: 'Games', icon: History, match: (p: string) => p.startsWith('/games') || p.startsWith('/analysis') || p.startsWith('/import') },
 ];
@@ -60,6 +70,8 @@ function route(path: string): ReactNode {
   if (p === '/program') return <ProgramScreen />;
   if (p === '/vision') return <VisionTrainer />;
   if (p === '/explorer') return <ExplorerScreen key={path} />;
+  if (p === '/repertoire') return <RepertoireList />;
+  if ((m = match('/repertoire/:id', p))) return <RepertoireBuilder key={p} id={m.id} />;
   if (p === '/insights') return <InsightsScreen />;
   if (p === '/report') return <WeeklyReport />;
   if (p === '/endgames') return <EndgamesHub />;

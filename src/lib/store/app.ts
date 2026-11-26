@@ -4,6 +4,7 @@ import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval';
 import type { Color } from '../chess/core';
 import { newCardState, schedule, type CardState, type Grade } from '../srs/scheduler';
 import { buildDay, getProgram, type ActiveProgram } from '../program';
+import { linesOf, type Repertoire } from '../repertoire';
 
 export type ThemePref = 'dark' | 'light' | 'system';
 export type BoardTheme = 'slate' | 'walnut' | 'brown' | 'green' | 'blue' | 'sage' | 'purple' | 'coral' | 'mono' | 'night';
@@ -139,6 +140,10 @@ interface AppState {
   recordVision: (mode: string, score: number) => void;
   drills: Record<string, DrillStat>;
   /** Results in Chess960 and Fog of War against the bots. */
+  /** Your own repertoires (built in the repertoire builder). */
+  customReps: Record<string, Repertoire>;
+  saveRep: (rep: Repertoire) => void;
+  deleteRep: (id: string) => void;
   variantStats: Record<string, { w: number; d: number; l: number }>;
   recordVariant: (mode: string, outcome: 'w' | 'd' | 'l') => void;
   /** grade: how cleanly a pass went ('hard' after hints or takebacks); failures reschedule a learned drill. */
@@ -217,6 +222,33 @@ export const useApp = create<AppState>()(
       recordVision: (mode, score) => {
         if ((get().vision[mode] ?? 0) < score) set({ vision: { ...get().vision, [mode]: score } });
         get().logActivity('puzzles');
+      },
+      customReps: {},
+      saveRep: (rep) => {
+        const old = get().customReps[rep.id];
+        const oid = `rep:${rep.id}`;
+        // Keep review cards in step with the tree: a line that grew keeps its schedule.
+        const oldLines = old ? linesOf(old) : [];
+        const newLines = linesOf(rep);
+        const cards = { ...get().cards };
+        for (const [cid, c] of Object.entries(cards)) {
+          if (c.kind !== 'line' || c.openingId !== oid) continue;
+          if (newLines.some((l) => l.id === c.lineId)) continue;
+          const was = oldLines.find((l) => l.id === c.lineId);
+          const grown = was && newLines.find((l) => l.sans.length >= was.sans.length && was.sans.every((s, i) => l.sans[i] === s));
+          delete cards[cid];
+          if (grown) {
+            const id = `line:${oid}:${grown.id}:${c.side}`;
+            if (!cards[id]) cards[id] = { ...c, id, lineId: grown.id };
+          }
+        }
+        set({ customReps: { ...get().customReps, [rep.id]: rep }, cards });
+      },
+      deleteRep: (id) => {
+        const reps = { ...get().customReps };
+        delete reps[id];
+        const cards = Object.fromEntries(Object.entries(get().cards).filter(([, c]) => !(c.kind === 'line' && c.openingId === `rep:${id}`)));
+        set({ customReps: reps, cards });
       },
       variantStats: {},
       recordVariant: (mode, outcome) => {
@@ -381,10 +413,11 @@ export const useApp = create<AppState>()(
           vision: data.vision ?? {},
           drills: data.drills ?? {},
           variantStats: data.variantStats ?? {},
+          customReps: data.customReps ?? {},
           quiz: data.quiz ?? { best: {}, rounds: 0, history: [] },
         }),
       resetAll: () =>
-        set({ settings: defaultSettings, games: [], cards: {}, lessons: {}, repertoire: {}, activity: {}, plan: null, puzzles: defaultPuzzleStats, classics: {}, program: null, quiz: { best: {}, rounds: 0, history: [] }, vision: {}, drills: {}, variantStats: {} }),
+        set({ settings: defaultSettings, games: [], cards: {}, lessons: {}, repertoire: {}, activity: {}, plan: null, puzzles: defaultPuzzleStats, classics: {}, program: null, quiz: { best: {}, rounds: 0, history: [] }, vision: {}, drills: {}, variantStats: {}, customReps: {} }),
     }),
     {
       name: 'outpost-state-v1',
@@ -404,6 +437,7 @@ export const useApp = create<AppState>()(
         vision: s.vision,
         drills: s.drills,
         variantStats: s.variantStats,
+        customReps: s.customReps,
       }),
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<AppState>;

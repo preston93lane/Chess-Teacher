@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useEffect, type ReactNode } from 'react';
 import { X, ChevronLeft } from 'lucide-react';
 import { back } from '../lib/router';
@@ -83,7 +84,9 @@ export function Sheet({
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
   if (!open) return null;
-  return (
+  // Portal to <body>: the scrolling main area is its own stacking context,
+  // and a sheet must cover the tab bar.
+  return createPortal(
     <div className="sheet-backdrop" onClick={onClose}>
       <div className={`sheet${wide ? ' sheet-wide' : ''}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal>
         <div className="sheet-head">
@@ -94,7 +97,8 @@ export function Sheet({
         </div>
         <div className="sheet-body">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

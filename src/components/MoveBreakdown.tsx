@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ArrowRight, BookOpen, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { Chess, applyUci, formatLine, moveLabel, uciOf, type Color, type PieceSymbol, type Square } from '../lib/chess/core';
@@ -221,7 +222,7 @@ export function MoveBreakdown({
   const info = data ? CLASS_INFO[data.review.cls] : null;
   const label = moveLabel(fenBefore, played.move.san);
 
-  return (
+  return createPortal(
     <div className="breakdown" role="dialog" aria-modal aria-label="Move breakdown">
       <div className="breakdown-inner">
         <header className="breakdown-head">
@@ -403,7 +404,8 @@ export function MoveBreakdown({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

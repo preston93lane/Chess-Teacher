@@ -95,8 +95,15 @@ export function openingBookMoves(opening: Opening, fen: string): BookMove[] {
   return [...res.values()];
 }
 
+let customResolver: ((id: string) => Opening | undefined) | null = null;
+
+/** Lets your own repertoires ("rep:<id>") resolve as openings. */
+export function setCustomOpeningResolver(fn: (id: string) => Opening | undefined) {
+  customResolver = fn;
+}
+
 export function getOpening(id: string): Opening | undefined {
-  return OPENINGS.find((o) => o.id === id);
+  return OPENINGS.find((o) => o.id === id) ?? customResolver?.(id);
 }
 
 /** Positions in a line where the student must find a move. */

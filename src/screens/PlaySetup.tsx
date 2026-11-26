@@ -9,6 +9,7 @@ import { navigate, query, useRoute } from '../lib/router';
 import { estimateRating, suggestBot } from '../lib/plan';
 import { Button, Header, Section, Segmented, Toggle } from '../components/ui';
 import { OPENINGS } from '../data/openings';
+import { getOpening } from '../lib/openings/book';
 import { allLines } from '../lib/openings/book';
 import { engine } from '../lib/engine/stockfish';
 import { TIME_PRESETS } from '../lib/clock';
@@ -36,7 +37,8 @@ export function PlaySetup() {
   const [coachLive, setCoachLive] = useState(settings.coachLive);
   const [tcId, setTcId] = useState(q.get('tc') ?? settings.timeControl ?? 'none');
   const preset = TIME_PRESETS.find((t) => t.id === tcId) ?? TIME_PRESETS[0];
-  const opening = OPENINGS.find((o) => o.id === openingId)!;
+  const customReps = useApp((x) => x.customReps);
+  const opening = getOpening(openingId) ?? OPENINGS[0];
   const fenError = useMemo(() => {
     if (mode !== 'fen' || !fen.trim()) return null;
     try {
@@ -198,6 +200,13 @@ export function PlaySetup() {
                     {o.name} ({o.side === 'w' ? 'White' : 'Black'} repertoire)
                   </option>
                 ))}
+                              {Object.values(customReps).length > 0 && (
+                  <optgroup label="Your repertoires">
+                    {Object.values(customReps).map((r) => (
+                      <option key={r.id} value={`rep:${r.id}`}>{r.name}</option>
+                    ))}
+                  </optgroup>
+                )}
               </select>
             </label>
             <label className="field">

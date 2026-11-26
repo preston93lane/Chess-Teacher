@@ -663,3 +663,23 @@
 .cc-btn:disabled { opacity: 0.4; }
 .cc-tc { min-width: 64px; text-align: center; font-weight: 700; color: var(--muted); }
 .chip.is-on { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
+
+/* ── Repertoire builder ────────────────────────────────────── */
+.rep-coach h3 { display: flex; align-items: center; gap: 6px; margin: 0; }
+.rep-suggest { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--surface-2); flex-wrap: wrap; }
+.rep-engine { display: flex; flex-direction: column; gap: 4px; }
+.rep-engine-line { display: grid; grid-template-columns: 3.6em 3.6em 1fr; gap: 8px; align-items: baseline; text-align: left; padding: 6px 8px; border-radius: var(--radius-sm); border: 1px solid transparent; background: transparent; }
+.rep-engine-line:hover { background: var(--surface-2); }
+.rep-engine-line.is-chosen { border-color: var(--t-best); }
+.rep-engine-line .faint { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rep-warning { margin: 0; padding: 8px 10px; border-radius: var(--radius-sm); background: color-mix(in srgb, var(--t-inaccuracy) 14%, transparent); font-size: 14px; }
+.rep-warning svg { color: var(--t-inaccuracy); }
+.rep-replies { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.rep-reply { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; padding: 8px 10px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--surface); text-align: left; }
+.rep-reply.is-covered { border-color: color-mix(in srgb, var(--t-best) 60%, transparent); }
+.rep-reply.is-covered span:last-child { color: var(--t-best); }
+.rep-reply.is-gap { border-color: color-mix(in srgb, var(--t-mistake) 60%, transparent); }
+.rep-reply.is-gap span:last-child { color: var(--t-mistake); }
+.rep-gap { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; text-align: left; padding: 8px 0; border: 0; border-top: 1px solid var(--line-soft); background: none; font-size: 14px; }
+.rep-line { cursor: default; }
+.link-btn.danger { color: var(--t-blunder); }

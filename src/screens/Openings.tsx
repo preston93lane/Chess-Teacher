@@ -25,6 +25,9 @@ export function Openings() {
         sub="Theory, ideas and plans. Learn a line, then drill it until it sticks."
         actions={
           <div className="row">
+            <button className="btn btn-secondary btn-sm" onClick={() => navigate('/repertoire')}>
+              <span>My repertoires</span>
+            </button>
             <button className="btn btn-secondary btn-sm" onClick={() => navigate('/explorer')}>
               <span>Master explorer</span>
             </button>

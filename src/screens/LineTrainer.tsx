@@ -23,6 +23,7 @@ export function LineTrainer({ openingId, lineId, mode }: { openingId: string; li
   const [result, setResult] = useState<DrillResult | null>(null);
   const [runKey, setRunKey] = useState(0);
   const line = opening?.lines.find((l) => l.id === lineId);
+  const home = openingId.startsWith('rep:') ? `/repertoire/${openingId.slice(4)}` : `/openings/${openingId}`;
 
   const onDone = useCallback(
     (r: DrillResult) => {
@@ -46,7 +47,7 @@ export function LineTrainer({ openingId, lineId, mode }: { openingId: string; li
 
   return (
     <div className="page board-screen-page">
-      <Header title={opening.name} backTo={`/openings/${openingId}`} sub={mode === 'learn' ? 'Learn the moves and the reasons behind them' : 'Recall the line from memory'} />
+      <Header title={opening.name} backTo={home} sub={mode === 'learn' ? 'Learn the moves and the reasons behind them' : 'Recall the line from memory'} />
       <BlockBanner />
       <LineDrill
         key={`${mode}-${runKey}`}
@@ -71,7 +72,7 @@ export function LineTrainer({ openingId, lineId, mode }: { openingId: string; li
           <Button variant="secondary" icon={<Swords size={16} />} onClick={() => navigate(`/play?opening=${openingId}&line=${lineId}&side=${side}`)}>
             Play it against the coach
           </Button>
-          <Button variant="ghost" onClick={() => navigate(`/openings/${openingId}`)}>Back to {opening.name}</Button>
+          <Button variant="ghost" onClick={() => navigate(home)}>Back to {opening.name}</Button>
         </div>
       )}
     </div>

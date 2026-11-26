@@ -1,4 +1,4 @@
-import { ArrowRight, ChartNoAxesColumn, Check, Crown, Database, Eye, Play } from 'lucide-react';
+import { ArrowRight, ChartNoAxesColumn, Check, Crown, Database, Eye, GitBranch, Play } from 'lucide-react';
 import { ALL_DRILLS } from '../data/endgames';
 import { useApp, dueCards } from '../lib/store/app';
 import { navigate } from '../lib/router';
@@ -93,6 +93,11 @@ export function Train() {
             <span className="trainer-card-title">Board vision</span>
             <span className="muted small">Timed square, colour, diagonal and knight-route drills.</span>
             <span className="faint small num">{visionBest ? `Best find-the-square: ${visionBest}` : 'Not tried yet'}</span>
+          </button>
+          <button className="trainer-card" onClick={() => navigate('/repertoire')}>
+            <GitBranch size={22} />
+            <span className="trainer-card-title">My repertoires</span>
+            <span className="muted small">Build your own opening tree with the coach, then drill it.</span>
           </button>
           <button className="trainer-card" onClick={() => navigate('/explorer')}>
             <Database size={22} />

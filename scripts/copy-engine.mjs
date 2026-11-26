@@ -1,4 +1,4 @@
-// Copies the single-threaded Stockfish WASM build into public/engine so it is
+// Copies the Stockfish WASM builds into public/engine so they are
 // served (and precached for offline use) alongside the app.
 import { copyFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -7,7 +7,8 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const src = join(root, 'node_modules', 'stockfish', 'bin');
 const dest = join(root, 'public', 'engine');
-const files = ['stockfish-18-lite-single.js', 'stockfish-18-lite-single.wasm'];
+// Single-threaded build everywhere; the multi-threaded one when the page is cross-origin isolated.
+const files = ['stockfish-18-lite-single.js', 'stockfish-18-lite-single.wasm', 'stockfish-18-lite.js', 'stockfish-18-lite.wasm'];
 
 if (!existsSync(src)) {
   console.warn('[copy-engine] stockfish package not installed yet; skipping');

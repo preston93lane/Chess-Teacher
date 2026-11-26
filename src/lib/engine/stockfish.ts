@@ -56,7 +56,15 @@ type Job = {
   cancelled: boolean;
 };
 
-const ENGINE_URL = `${import.meta.env.BASE_URL}engine/stockfish-18-lite-single.js`;
+const BASE = `${import.meta.env.BASE_URL}engine/`;
+
+/** Multi-threaded engine needs SharedArrayBuffer, which needs cross-origin isolation. */
+export function threadsAvailable(): number {
+  const isolated = typeof self !== 'undefined' && (self as { crossOriginIsolated?: boolean }).crossOriginIsolated === true;
+  if (!isolated || typeof SharedArrayBuffer === 'undefined') return 1;
+  const cores = typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 2 : 2;
+  return Math.max(1, Math.min(4, cores - 1));
+}
 
 class StockfishEngine {
   private worker: Worker | null = null;
@@ -79,31 +87,48 @@ class StockfishEngine {
     this.listeners.forEach((l) => l(busy));
   }
 
+  /** Which build is running: threads > 1 means the multi-threaded one. */
+  info = { threads: 1, build: 'lite-single' };
+
   init(): Promise<void> {
     if (this.ready) return this.ready;
-    this.ready = new Promise<void>((resolve, reject) => {
+    const threads = threadsAvailable();
+    this.ready = (threads > 1 ? this.boot('stockfish-18-lite.js', threads, 12000) : Promise.reject(new Error('single')))
+      .catch(() => {
+        this.worker?.terminate();
+        this.worker = null;
+        return this.boot('stockfish-18-lite-single.js', 1, 30000);
+      })
+      .catch((err) => {
+        this.failed = true;
+        throw err;
+      });
+    return this.ready;
+  }
+
+  private boot(file: string, threads: number, timeoutMs: number): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
       try {
-        const w = new Worker(ENGINE_URL);
+        const w = new Worker(BASE + file);
         this.worker = w;
         let gotUci = false;
         const timeout = setTimeout(() => {
-          if (!gotUci) {
-            this.failed = true;
-            reject(new Error('Engine did not start'));
-          }
-        }, 30000);
+          if (!gotUci || !this.started) reject(new Error('Engine did not start'));
+        }, timeoutMs);
         w.onmessage = (e: MessageEvent) => {
           const line = typeof e.data === 'string' ? e.data : String(e.data);
           if (!gotUci) {
             if (line === 'uciok') {
               gotUci = true;
-              this.send('setoption name Hash value 32');
+              if (threads > 1) this.send(`setoption name Threads value ${threads}`);
+              this.send(`setoption name Hash value ${threads > 1 ? 64 : 32}`);
               this.send('isready');
             }
             return;
           }
           if (line === 'readyok' && !this.current && !this.started) {
             this.started = true;
+            this.info = { threads, build: file.replace('stockfish-18-', '').replace('.js', '') };
             clearTimeout(timeout);
             resolve();
             this.pump();
@@ -112,17 +137,14 @@ class StockfishEngine {
           this.handleLine(line);
         };
         w.onerror = (err) => {
-          this.failed = true;
           clearTimeout(timeout);
           reject(err);
         };
         this.send('uci');
       } catch (err) {
-        this.failed = true;
         reject(err);
       }
     });
-    return this.ready;
   }
 
   private started = false;

@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { engine, threadsAvailable } from '../lib/engine/stockfish';
 import { Download, RefreshCw, Upload, Trash2 } from 'lucide-react';
 import { syncGames } from '../lib/sync';
 import { entries, set as idbSet, clear as idbClear } from 'idb-keyval';
@@ -122,6 +123,7 @@ export function SettingsScreen() {
             ]}
           />
           <span className="muted small">Deeper reviews are more accurate but slower on a phone. Balanced reviews a 40-move game in about a minute.</span>
+          <EngineStatus />
         </div>
       </Section>
 
@@ -215,5 +217,21 @@ function SyncSettings() {
         <span className="muted small">{status ?? (sync.lastSyncAt ? `Last synced ${new Date(sync.lastSyncAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}` : 'Not synced yet')}</span>
       </div>
     </div>
+  );
+}
+
+function EngineStatus() {
+  const [info, setInfo] = useState<{ threads: number } | null>(null);
+  useEffect(() => {
+    let alive = true;
+    engine.init().then(() => alive && setInfo({ ...engine.info })).catch(() => alive && setInfo({ threads: 0 }));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return (
+    <span className="faint small">
+      {!info ? 'Starting the engine…' : info.threads === 0 ? 'The engine failed to start.' : info.threads > 1 ? `Stockfish 18 running on ${info.threads} threads.` : `Stockfish 18 running on one thread${threadsAvailable() === 1 && !window.crossOriginIsolated ? ' (reopen the app once to enable multi-threading)' : ''}.`}
+    </span>
   );
 }

@@ -12,7 +12,11 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icons/*.png', 'engine/stockfish-18-lite-single.js', 'engine/stockfish-18-lite-single.wasm'],
+      // Custom service worker: precache + cross-origin isolation headers (see src/sw.ts).
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
+      includeAssets: ['icons/*.png', 'engine/*.js', 'engine/*.wasm'],
       manifest: {
         name: 'Outpost Chess Coach',
         short_name: 'Outpost',
@@ -29,14 +33,15 @@ export default defineConfig({
           { src: 'icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
-      workbox: {
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2,wasm,json,webmanifest}'],
         maximumFileSizeToCacheInBytes: 12 * 1024 * 1024,
-        navigateFallback: `${base}index.html`,
-        cleanupOutdatedCaches: true,
       },
     }),
   ],
+  // Cross-origin isolation in development too (multi-threaded engine).
+  server: { headers: { 'Cross-Origin-Opener-Policy': 'same-origin', 'Cross-Origin-Embedder-Policy': 'require-corp' } },
+  preview: { headers: { 'Cross-Origin-Opener-Policy': 'same-origin', 'Cross-Origin-Embedder-Policy': 'require-corp' } },
   build: {
     target: 'es2020',
     chunkSizeWarningLimit: 1200,

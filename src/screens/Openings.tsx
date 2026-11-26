@@ -20,7 +20,15 @@ export function Openings() {
 
   return (
     <div className="page">
-      <Header title="Openings" sub="Theory, ideas and plans. Learn a line, then drill it until it sticks." />
+      <Header
+        title="Openings"
+        sub="Theory, ideas and plans. Learn a line, then drill it until it sticks."
+        actions={
+          <button className="btn btn-primary btn-sm" onClick={() => navigate('/openings/quiz')}>
+            <span>Opening quiz</span>
+          </button>
+        }
+      />
       <Segmented
         value={filter}
         onChange={setFilter}

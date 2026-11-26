@@ -8,6 +8,7 @@ import { Button, Header } from '../components/ui';
 import { LineDrill, type DrillResult } from '../components/Trainers';
 import type { Color } from '../lib/chess/core';
 import { toast } from '../components/Toast';
+import { BlockBanner, completeBlock } from '../components/BlockBanner';
 
 export function LineTrainer({ openingId, lineId, mode }: { openingId: string; lineId: string; mode: 'learn' | 'drill' }) {
   const path = useRoute();
@@ -30,12 +31,14 @@ export function LineTrainer({ openingId, lineId, mode }: { openingId: string; li
       addLineCard(openingId, lineId, side);
       logActivity('lines');
       markPlanStep(`learn:${openingId}:${lineId}:${side}`);
+      if (completeBlock(q.get('block'))) toast('Block complete.');
       if (mode === 'drill') {
         gradeCard(id, gradeFromMistakes(r.mistakes, r.hints), r.weakPlies);
       } else if (!card) {
         toast('Line added to your review deck.');
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [openingId, lineId, side, mode, addLineCard, gradeCard, logActivity, markPlanStep, card],
   );
 
@@ -44,6 +47,7 @@ export function LineTrainer({ openingId, lineId, mode }: { openingId: string; li
   return (
     <div className="page board-screen-page">
       <Header title={opening.name} backTo={`/openings/${openingId}`} sub={mode === 'learn' ? 'Learn the moves and the reasons behind them' : 'Recall the line from memory'} />
+      <BlockBanner />
       <LineDrill
         key={`${mode}-${runKey}`}
         openingId={openingId}

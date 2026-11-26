@@ -12,6 +12,7 @@ import { MoveBreakdown } from '../components/MoveBreakdown';
 import { usePuzzleDb } from './Puzzles';
 import { getOpening } from '../lib/openings/book';
 import { toast } from '../components/Toast';
+import { BlockBanner, completeBlock } from '../components/BlockBanner';
 
 function coachLine(p: Puzzle): string {
   const s = puzzleStart(p);
@@ -31,6 +32,10 @@ export function PuzzleSession() {
   const mode = q.get('mode') ?? 'rated';
   const theme = q.get('theme') ?? '';
   const openingId = q.get('id') ?? '';
+  const mixThemes = (q.get('themes') ?? '').split(',').filter(Boolean);
+  const target = +(q.get('count') ?? 0);
+  const blockId = q.get('block');
+  const [solvedInSet, setSolvedInSet] = useState(0);
   const { db } = usePuzzleDb();
   const ps = useApp((s) => s.puzzles);
   const record = useApp((s) => s.recordPuzzle);
@@ -49,8 +54,11 @@ export function PuzzleSession() {
     if (mode === 'theme') return (p: Puzzle) => p.themes.includes(theme);
     if (mode === 'opening') return (p: Puzzle) => p.opening === openingId;
     if (mode === 'master') return isMaster;
+    if (mode === 'mix')
+      return (p: Puzzle) => mixThemes.some((t) => (t.startsWith('opening:') ? p.opening === t.slice(8) : p.themes.includes(t)));
     return undefined;
-  }, [mode, theme, openingId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, theme, openingId, q.get('themes')]);
 
   const next = useCallback(() => {
     if (!db) return;
@@ -90,6 +98,11 @@ export function PuzzleSession() {
       }
     }
     setResult({ ...r, delta });
+    if (attempt === 0) {
+      const n = solvedInSet + 1;
+      setSolvedInSet(n);
+      if (target && n >= target && completeBlock(blockId)) toast('Block complete — nice work.');
+    }
   };
 
   const retry = () => {
@@ -115,6 +128,7 @@ export function PuzzleSession() {
     rated: 'Rated puzzles',
     daily: 'Daily puzzle',
     master: 'Master games',
+    mix: 'Mixed tactics',
     theme: THEME_INFO[theme]?.label ?? 'Theme',
     opening: getOpening(openingId)?.name ?? 'Opening tactics',
   };
@@ -123,7 +137,12 @@ export function PuzzleSession() {
 
   return (
     <div className="page board-screen-page">
-      <Header title={titles[mode] ?? 'Puzzles'} backTo="/puzzles" sub={`Your rating ${ps.rating}${streak > 1 ? ` · streak ${streak}` : ''}`} />
+      <Header
+        title={titles[mode] ?? 'Puzzles'}
+        backTo={blockId ? '/program' : '/puzzles'}
+        sub={`Your rating ${ps.rating}${target ? ` · ${Math.min(solvedInSet, target)}/${target} in this set` : ''}${streak > 1 ? ` · streak ${streak}` : ''}`}
+      />
+      <BlockBanner />
       <div className="board-screen">
         <div className="board-col">
           <PuzzleSolver key={`${puzzle.id}-${attempt}`} puzzle={puzzle} onResult={onResult} showSolution={showSolution} hint={hint} />

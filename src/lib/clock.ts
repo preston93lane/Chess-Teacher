@@ -104,7 +104,8 @@ export function botThinkTime(opts: {
   if (chess.inCheck() && legal.length <= 3) t *= 0.35;
   const recapture = opts.lastMoveSan?.includes('x') && legal.some((m) => m.captured && m.to === opts.lastMoveTo);
   if (recapture && Math.random() < 0.7) t *= 0.35;
-  if (legal.length === 1) t = 350 + Math.random() * 400;
+  // Only one legal move: a person plays it almost at once — but not instantly.
+  if (legal.length === 1) return Math.round(Math.min(300 + Math.random() * 400, Math.max(200, remaining * 0.1)));
 
   // Human variance
   t *= Math.exp(gaussian() * 0.35);

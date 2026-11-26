@@ -15,6 +15,8 @@ export interface GameConfig {
   coachLive: boolean;
   title?: string;
   timeControl?: TimeControl | null;
+  /** Training-program block this game belongs to. */
+  block?: string;
 }
 
 export interface LiveGame {

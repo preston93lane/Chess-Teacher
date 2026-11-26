@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ArrowRight, Check } from 'lucide-react';
 import { useApp, dueCards, type Card } from '../lib/store/app';
 import { gradeFromMistakes, type Grade } from '../lib/srs/scheduler';
@@ -6,6 +6,7 @@ import { navigate, query, useRoute } from '../lib/router';
 import { getOpening } from '../lib/openings/book';
 import { Button, Empty, Header } from '../components/ui';
 import { LineDrill, PuzzleDrill, type DrillResult } from '../components/Trainers';
+import { BlockBanner, completeBlock } from '../components/BlockBanner';
 
 export function ReviewSession() {
   const path = useRoute();
@@ -19,6 +20,10 @@ export function ReviewSession() {
   const [graded, setGraded] = useState<Grade | null>(null);
   const [tally, setTally] = useState({ good: 0, again: 0 });
   const card = queue[index];
+  const blockId = query(path).get('block');
+  useEffect(() => {
+    if (!card) completeBlock(blockId);
+  }, [card, blockId]);
 
   const onLineDone = useCallback(
     (r: DrillResult) => {
@@ -53,7 +58,8 @@ export function ReviewSession() {
   if (!queue.length) {
     return (
       <div className="page page-narrow">
-        <Header title="Review" backTo="/train" />
+        <Header title="Review" backTo={blockId ? '/program' : '/train'} />
+        <BlockBanner />
         <Empty title="Nothing due" action={<Button onClick={() => navigate('/openings')}>Learn a new line</Button>}>
           You’re all caught up. New cards appear when you learn lines or review games.
         </Empty>
@@ -64,7 +70,8 @@ export function ReviewSession() {
   if (!card) {
     return (
       <div className="page page-narrow">
-        <Header title="Session complete" backTo="/train" />
+        <Header title="Session complete" backTo={blockId ? '/program' : '/train'} />
+        <BlockBanner />
         <div className="panel stack">
           <p className="session-done-num num">{tally.good}/{queue.length}</p>
           <p className="muted">

@@ -5,6 +5,8 @@ import { dailySession, estimateRating, getTrack, findWeaknesses } from '../lib/p
 import { navigate } from '../lib/router';
 import { IconButton, Section } from '../components/ui';
 import { OPENINGS } from '../data/openings';
+import { ProgramTodayCard } from './Program';
+import { currentDay } from '../lib/program';
 
 const KIND_LABEL: Record<string, string> = {
   review: 'Review',
@@ -37,7 +39,11 @@ export function Today() {
   const reviewed = s.games.filter((g) => g.reviewed && g.myColor && g.accuracy).slice(0, 12).reverse();
   const weaknesses = findWeaknesses(s.games);
   const todayAct = s.activity[today()];
-  const totalMinutes = steps.reduce((a, b) => a + b.minutes, 0);
+  const programDay = s.program ? currentDay(s.program) : null;
+  const extra = s.program ? steps.filter((st) => st.kind === 'review' || st.kind === 'analyse') : steps;
+  const openBlocks = programDay ? programDay.blocks.filter((b) => !s.program!.done.includes(b.id)) : [];
+  const stepCount = extra.length + openBlocks.length;
+  const totalMinutes = extra.reduce((a, b) => a + b.minutes, 0) + openBlocks.reduce((a, b) => a + b.minutes, 0);
   const cardsTotal = Object.keys(s.cards).length;
   const lessonsDone = Object.values(s.lessons).filter((l) => l.completed).length;
 
@@ -48,7 +54,7 @@ export function Today() {
           <p className="today-date">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</p>
           <h1 className="today-title">Today’s session</h1>
           <p className="today-sub">
-            {steps.length} step{steps.length === 1 ? '' : 's'} · about {totalMinutes} min
+            {stepCount} step{stepCount === 1 ? '' : 's'} · about {totalMinutes} min
           </p>
         </div>
         <div className="today-head-actions">
@@ -59,8 +65,11 @@ export function Today() {
       </header>
 
       <div className="today-grid">
+        <div className="today-main">
+        {s.program && <ProgramTodayCard />}
+        {s.program && steps.filter((st) => st.kind === 'review' || st.kind === 'analyse').length > 0 && <h3 className="also-today">Also today</h3>}
         <ol className="session">
-          {steps.map((st, i) => (
+          {(s.program ? steps.filter((st) => st.kind === 'review' || st.kind === 'analyse') : steps).map((st, i) => (
             <li key={st.id}>
               <button className="session-step" onClick={() => navigate(st.to)}>
                 <span className="session-num">{i + 1}</span>
@@ -74,6 +83,16 @@ export function Today() {
             </li>
           ))}
         </ol>
+        {!s.program && (
+          <button className="program-cta" onClick={() => navigate('/program')}>
+            <span>
+              <strong>Start a training program</strong>
+              <span className="muted small">Daily lesson plans, weekly review days and checkpoints — 4 to 8 weeks.</span>
+            </span>
+            <ArrowRight size={18} />
+          </button>
+        )}
+        </div>
 
         <aside className="today-side">
           <div className="stat-strip">

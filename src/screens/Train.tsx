@@ -7,6 +7,7 @@ import { dueLabel } from '../lib/srs/scheduler';
 import { Button, Header, Section } from '../components/ui';
 import { MiniBoard } from '../components/MiniBoard';
 import { CLASSICS } from '../data/classics';
+import { ProgramTodayCard } from './Program';
 import type { PuzzleCard } from '../lib/store/app';
 import type { Track } from '../lib/lessons/types';
 
@@ -16,6 +17,8 @@ export function Train() {
   const cards = useApp((s) => s.cards);
   const lessons = useApp((s) => s.lessons);
   const plan = useApp((s) => s.plan);
+  const program = useApp((s) => s.program);
+  const quizBest = useApp((s) => s.quiz.best.library);
   const removeCard = useApp((s) => s.removeCard);
   const due = dueCards(cards);
   const all = Object.values(cards);
@@ -55,7 +58,25 @@ export function Train() {
         </div>
       </div>
 
-      <Section title="Training plan" action={<button className="link-btn" onClick={() => navigate('/train/plan')}>{track ? 'View plan' : 'Choose a plan'} <ArrowRight size={14} /></button>}>
+      <Section title="Training program" action={<button className="link-btn" onClick={() => navigate('/program')}>{program ? 'Open' : 'Choose'} <ArrowRight size={14} /></button>}>
+        {program ? (
+          <ProgramTodayCard />
+        ) : (
+          <button className="program-cta" onClick={() => navigate('/program')}>
+            <span>
+              <strong>Pick a regimen</strong>
+              <span className="muted small">All-round, tactics bootcamp, repertoire builder or positional mastery — with daily plans and weekly reviews.</span>
+            </span>
+            <ArrowRight size={18} />
+          </button>
+        )}
+      </Section>
+
+      <Section title="Opening quiz" action={<button className="link-btn" onClick={() => navigate('/openings/quiz')}>Start <ArrowRight size={14} /></button>}>
+        <p className="muted">See a position, name the opening, then play the next theory move. {quizBest !== undefined ? `Best library score: ${quizBest}.` : ''}</p>
+      </Section>
+
+      <Section title="Topic tracks" action={<button className="link-btn" onClick={() => navigate('/train/plan')}>{track ? 'View plan' : 'Choose a plan'} <ArrowRight size={14} /></button>}>
         {track ? (
           <button className="plan-card" onClick={() => navigate('/train/plan')}>
             <span className="plan-card-title">{track.title}</span>

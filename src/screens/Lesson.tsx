@@ -11,6 +11,7 @@ import { lineScore, winPct } from '../lib/coach/eval';
 import { soundForSan, playSound } from '../lib/sound';
 import { Board, type Arrow, type Mark } from '../components/Board';
 import { Button, Header, Spinner } from '../components/ui';
+import { BlockBanner, completeBlock, useBlockId } from '../components/BlockBanner';
 
 function sectionPosition(s: LessonSection) {
   const c = new Chess(s.fen);
@@ -38,6 +39,7 @@ export function LessonScreen({ id }: { id: string }) {
   const complete = useApp((s) => s.completeLesson);
   const markPlanStep = useApp((s) => s.markPlanStep);
   const [index, setIndex] = useState(0);
+  const blockId = useBlockId();
   if (!lesson) return <div className="page"><Header title="Lesson not found" backTo="/train" /></div>;
   const section = lesson.sections[index];
   const tasks = lesson.sections.filter((s) => s.task).length;
@@ -46,12 +48,14 @@ export function LessonScreen({ id }: { id: string }) {
   const finish = () => {
     complete(id);
     markPlanStep(`lesson:${id}`);
-    navigate('/train');
+    if (completeBlock(blockId) || blockId) navigate('/program');
+    else navigate('/train');
   };
 
   return (
     <div className="page board-screen-page">
       <Header title={lesson.title} backTo="/train" sub={`${lesson.track} · ${lesson.minutes} min · ${progress?.completed ? 'Completed' : `${progress?.solved.length ?? 0}/${tasks} tasks solved`}`} />
+      <BlockBanner />
       <div className="lesson-steps" aria-label="Lesson sections">
         {lesson.sections.map((s, i) => (
           <button key={i} className={`lesson-step${i === index ? ' is-on' : ''}${progress?.solved.includes(String(i)) ? ' is-done' : ''}`} onClick={() => setIndex(i)} aria-label={`Section ${i + 1}: ${s.title}`}>

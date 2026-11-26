@@ -194,3 +194,61 @@ describe('human-like clock use', () => {
     expect(updateRating(1500, 1500, false, 0)).toBeLessThan(1500);
   });
 });
+
+import { PROGRAMS, allDays, buildDay } from '../program';
+import { makeQuestions } from '../quiz';
+
+describe('training programs', () => {
+  it('every program day has blocks, a review day closes each week, checkpoints exist', () => {
+    for (const t of PROGRAMS) {
+      for (const dpw of [3, 5, 7]) {
+        for (const mins of [20, 40, 60]) {
+          const days = allDays(t, { daysPerWeek: dpw, minutesPerDay: mins });
+          expect(days.length).toBe(t.weeks.length * dpw);
+          for (const d of days) {
+            expect(d.blocks.length).toBeGreaterThan(0);
+            for (const b of d.blocks) expect(b.to.startsWith('/')).toBe(true);
+          }
+          expect(days.filter((d) => d.review).length).toBe(t.weeks.length);
+          expect(days.some((d) => d.checkpoint)).toBe(true);
+        }
+      }
+    }
+  });
+  it('spreads every week item across the regular days', () => {
+    const t = PROGRAMS[0];
+    const titles = [1, 2, 3, 4].flatMap((d) => buildDay(t, 1, d, 5, 40).blocks.map((b) => b.title));
+    expect(titles.some((x) => x.startsWith('Lesson:'))).toBe(true);
+    expect(titles.some((x) => x.startsWith('Italian Game:'))).toBe(true);
+    expect(titles.some((x) => x.startsWith('Classic:'))).toBe(true);
+    expect(titles).toContain('Opening quiz');
+  });
+  it('review days interleave earlier weeks', () => {
+    const d = buildDay(PROGRAMS[0], 3, 5, 5, 40);
+    const quiz = d.blocks.find((b) => b.kind === 'quiz')!;
+    expect(quiz.to).toContain('italian');
+    expect(quiz.to).toContain('caro-kann');
+  });
+});
+
+describe('opening quiz', () => {
+  it('library questions name the line and expect a legal theory move', async () => {
+    const qs = await makeQuestions('library', 12, []);
+    expect(qs.length).toBeGreaterThan(8);
+    for (const q of qs) {
+      expect(q.options).toContain(q.answer);
+      expect(new Set(q.options).size).toBe(q.options.length);
+      expect(() => new Chess(q.fen).move(q.next)).not.toThrow();
+    }
+  });
+  it('family questions come from mainstream openings with legal next moves', async () => {
+    for (const source of ['families', 'variations'] as const) {
+      const qs = await makeQuestions(source, 8, []);
+      expect(qs.length).toBeGreaterThan(5);
+      for (const q of qs) {
+        expect(q.options.length).toBe(4);
+        expect(() => new Chess(q.fen).move(q.next)).not.toThrow();
+      }
+    }
+  });
+});

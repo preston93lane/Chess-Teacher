@@ -3,6 +3,7 @@ import { persist, createJSONStorage, type StateStorage } from 'zustand/middlewar
 import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval';
 import type { Color } from '../chess/core';
 import { newCardState, schedule, type CardState, type Grade } from '../srs/scheduler';
+import { buildDay, getProgram, type ActiveProgram } from '../program';
 
 export type ThemePref = 'dark' | 'light' | 'system';
 export type BoardTheme = 'slate' | 'walnut' | 'sage' | 'mono';
@@ -121,6 +122,12 @@ interface AppState {
   plan: PlanState | null;
   puzzles: PuzzleStats;
   classics: Record<string, { best: number; total: number }>;
+  program: ActiveProgram | null;
+  startProgram: (p: Omit<ActiveProgram, 'done' | 'checkpoints' | 'startedAt'>) => void;
+  stopProgram: () => void;
+  completeBlock: (id: string | null | undefined) => boolean;
+  quiz: { best: Record<string, number>; rounds: number; history: { source: string; score: number; max: number; t: number }[] };
+  recordQuiz: (source: string, score: number, max: number) => void;
   recordClassic: (id: string, found: number, total: number) => void;
   recordPuzzle: (r: { id: string; puzzleRating: number; ok: boolean; rated: boolean; newRating?: number; daily?: boolean }) => void;
   recordRush: (mode: string, score: number) => void;
@@ -184,6 +191,41 @@ export const useApp = create<AppState>()(
       plan: null,
       puzzles: defaultPuzzleStats,
       classics: {},
+      program: null,
+      startProgram: (p) => set({ program: { ...p, done: [], checkpoints: [], startedAt: Date.now() } }),
+      stopProgram: () => set({ program: null }),
+      completeBlock: (id) => {
+        const p = get().program;
+        if (!p || !id || !id.startsWith(p.templateId + ':') || p.done.includes(id)) return false;
+        const done = [...p.done, id];
+        let checkpoints = p.checkpoints;
+        const m = id.match(/:w(\d+):d(\d+):/);
+        const t = getProgram(p.templateId);
+        if (m && t) {
+          const day = buildDay(t, +m[1], +m[2], p.daysPerWeek, p.minutesPerDay);
+          if (day.checkpoint && day.blocks.every((b) => done.includes(b.id))) {
+            const st = get();
+            checkpoints = [
+              ...checkpoints.filter((c) => c.week !== day.week),
+              { week: day.week, puzzleRating: st.puzzles.rating, botRating: 0, rush: st.puzzles.rush.survival ?? 0, at: Date.now() },
+            ];
+          }
+        }
+        set({ program: { ...p, done, checkpoints } });
+        return true;
+      },
+      quiz: { best: {}, rounds: 0, history: [] },
+      recordQuiz: (source, score, max) => {
+        const q = get().quiz;
+        set({
+          quiz: {
+            best: { ...q.best, [source]: Math.max(q.best[source] ?? 0, score) },
+            rounds: q.rounds + 1,
+            history: [{ source, score, max, t: Date.now() }, ...q.history].slice(0, 100),
+          },
+        });
+        get().logActivity('lines');
+      },
       recordClassic: (id, found, total) => {
         const cur = get().classics[id];
         if (!cur || found > cur.best) set({ classics: { ...get().classics, [id]: { best: found, total } } });
@@ -284,9 +326,11 @@ export const useApp = create<AppState>()(
           plan: data.plan ?? null,
           puzzles: { ...defaultPuzzleStats, ...(data.puzzles ?? {}) },
           classics: data.classics ?? {},
+          program: data.program ?? null,
+          quiz: data.quiz ?? { best: {}, rounds: 0, history: [] },
         }),
       resetAll: () =>
-        set({ settings: defaultSettings, games: [], cards: {}, lessons: {}, repertoire: {}, activity: {}, plan: null, puzzles: defaultPuzzleStats, classics: {} }),
+        set({ settings: defaultSettings, games: [], cards: {}, lessons: {}, repertoire: {}, activity: {}, plan: null, puzzles: defaultPuzzleStats, classics: {}, program: null, quiz: { best: {}, rounds: 0, history: [] } }),
     }),
     {
       name: 'outpost-state-v1',
@@ -301,6 +345,8 @@ export const useApp = create<AppState>()(
         plan: s.plan,
         puzzles: s.puzzles,
         classics: s.classics,
+        program: s.program,
+        quiz: s.quiz,
       }),
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<AppState>;

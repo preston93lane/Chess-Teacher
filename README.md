@@ -21,6 +21,29 @@ Outpost is a chess training app for intermediate and advanced players. It runs e
 
 **What matters here.** The coach describes a position's themes without ever naming the move to play: pieces under attack, loose pieces, pins against you or your opponent, pin and skewer lines, knight-fork squares, back-rank weakness, king safety, development, the centre and space, doubled or weak pawns, passed pawns, bad bishops, open files and outposts. *Look deeper* adds what the engine sees: the opponent's threat, the fact that a tactic exists (and which kind), and moments where only one move holds. Tap a theme to highlight its squares on the board.
 
+**Puzzles.** 31,205 puzzles curated from the Lichess puzzle database (CC0), stored on the device:
+
+- Rated puzzles that adapt to your puzzle rating, and a daily puzzle.
+- Puzzle Rush: 3 minutes, 5 minutes or survival.
+- 44 tactical themes to practise.
+- Puzzles from real games in each library opening, and from master games.
+- Missed puzzles go into your review deck.
+
+To rebuild the set, run `scripts/build-puzzles.py`.
+
+**Timed games.** Time controls from 1+0 to 30+20. The bots manage their clocks like people: fast in known positions and on forced moves, slower in sharp ones, quicker the stronger they are, and they slip a little when short of time.
+
+**Classic games.** 17 annotated immortal games. Replay them with commentary, or play the winner's side and find the key moves. Each opening also has a History tab with its namesake, how the theory evolved, and model games.
+
+**Opening quiz.** You see a position, name the opening (your repertoire, the library lines, all mainstream openings, or exact variations), then play the next theory move.
+
+**Training programs.** Four regimens of 4–8 weeks: all-round, tactics bootcamp, repertoire builder and positional mastery. You choose days per week and minutes per day.
+
+- Regular days mix warm-up puzzles, new material (lessons, lines, classics) and practice (quizzes, games).
+- The last day of each week is a review day that interleaves everything so far.
+- Checkpoints at week 4 and at the end measure progress against your starting point.
+- Blocks tick themselves off as you finish them.
+
 **Opening library.** 14 openings with 58 annotated lines for both colours: Ruy Lopez, Italian, Queen's Gambit, London, Catalan, English, Najdorf, Dragon, French, Caro-Kann, King's Indian, Nimzo-Indian, Grünfeld and Slav. Each one comes with its main ideas for both sides, typical structures, middlegame plans and traps. Every line has been checked move by move with Stockfish.
 
 - **Learn** walks you through a line with commentary on each move.

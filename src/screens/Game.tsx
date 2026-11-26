@@ -224,6 +224,7 @@ function LiveGameView({ game }: { game: LiveGame }) {
       addGame(meta);
       logActivity('games');
       if (g.config.openingId) markPlanStep(`play:${g.config.openingId}:${g.config.userColor}`);
+      if (g.config.block) useApp.getState().completeBlock(g.config.block);
       patch({ saved: true });
     },
     [patch, addGame, logActivity, markPlanStep, bot.name],

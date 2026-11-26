@@ -8,12 +8,14 @@ import { Button, Header, Spinner } from '../components/ui';
 import { PuzzleSolver, solutionLine, type SolveResult } from '../components/PuzzleSolver';
 import { usePuzzleDb } from './Puzzles';
 import { playSound } from '../lib/sound';
+import { BlockBanner, completeBlock } from '../components/BlockBanner';
 
 const LIMITS: Record<string, number | null> = { '3': 180_000, '5': 300_000, survival: null };
 
 export function PuzzleRush() {
   const path = useRoute();
   const mode = query(path).get('mode') ?? '3';
+  const blockId = query(path).get('block');
   const limit = LIMITS[mode] ?? null;
   const { db } = usePuzzleDb();
   const best = useApp((s) => s.puzzles.rush[mode] ?? 0);
@@ -53,9 +55,10 @@ export function PuzzleRush() {
     (finalScore: number) => {
       setPhase('over');
       recordRush(mode, finalScore);
+      completeBlock(blockId);
       playSound('end');
     },
-    [mode, recordRush],
+    [mode, recordRush, blockId],
   );
 
   useEffect(() => {
@@ -90,7 +93,8 @@ export function PuzzleRush() {
 
   return (
     <div className="page board-screen-page">
-      <Header title="Puzzle Rush" backTo="/puzzles" sub={`${mode === 'survival' ? 'Survival' : `${mode} minutes`} · best ${best}`} />
+      <Header title="Puzzle Rush" backTo={blockId ? '/program' : '/puzzles'} sub={`${mode === 'survival' ? 'Survival' : `${mode} minutes`} · best ${best}`} />
+      <BlockBanner />
       {!db && <Spinner label="Loading puzzles…" />}
       {db && phase === 'ready' && (
         <div className="panel stack rush-intro">

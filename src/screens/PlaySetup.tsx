@@ -67,6 +67,7 @@ export function PlaySetup() {
         coachLive,
         title: mode === 'opening' ? opening.name : undefined,
         timeControl: preset.tc,
+        block: q.get('block') ?? undefined,
       },
       clock: preset.tc ? { w: preset.tc.initial, b: preset.tc.initial, running: null, since: null } : undefined,
       sans: [...presetSans],

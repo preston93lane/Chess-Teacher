@@ -6,13 +6,14 @@ import { parseMovetext } from '../lib/chess/pgn';
 import { engine } from '../lib/engine/stockfish';
 import { lineScore, winPct } from '../lib/coach/eval';
 import { useApp } from '../lib/store/app';
-import { navigate } from '../lib/router';
+import { navigate, query, useRoute } from '../lib/router';
 import { soundForSan, playSound } from '../lib/sound';
 import { useArrowKeys } from '../lib/hooks';
 import { Board, type Arrow } from '../components/Board';
 import { MoveList } from '../components/MoveList';
 import { Button, Header, IconButton, Segmented, Spinner } from '../components/ui';
 import { getOpening } from '../lib/openings/book';
+import { BlockBanner, completeBlock } from '../components/BlockBanner';
 
 const TAGS = ['All', 'Attack', 'Sacrifice', 'Positional', 'Defence', 'King hunt', 'Miniature'] as const;
 
@@ -79,11 +80,13 @@ function parseGame(g: ClassicGame): Parsed {
 
 export function ClassicScreen({ id }: { id: string }) {
   const game = getClassic(id);
-  const [mode, setMode] = useState<'replay' | 'guess'>('replay');
+  const q = query(useRoute());
+  const [mode, setMode] = useState<'replay' | 'guess'>(q.get('mode') === 'guess' ? 'guess' : 'replay');
   if (!game) return <div className="page"><Header title="Game not found" backTo="/classics" /></div>;
   return (
     <div className="page board-screen-page">
       <Header title={game.title} backTo="/classics" sub={`${game.white} – ${game.black} · ${game.event} ${game.year} · ${game.result}`} />
+      <BlockBanner />
       <div className="mb8">
         <Segmented
           value={mode}
@@ -177,6 +180,7 @@ function Guess({ game }: { game: ClassicGame }) {
   const winner: Color = game.result === '0-1' ? 'b' : 'w';
   const keyPlies = useMemo(() => new Set(game.keys.map((k) => parsed.labels.indexOf(k)).filter((i) => i >= 0)), [game, parsed]);
   const saveScore = useApp((s) => s.recordClassic);
+  const blockId = query(useRoute()).get('block');
   const [ply, setPly] = useState(0);
   const [found, setFound] = useState(0);
   const [tries, setTries] = useState(0);
@@ -202,9 +206,10 @@ function Guess({ game }: { game: ClassicGame }) {
     if (done && !recorded.current) {
       recorded.current = true;
       saveScore(game.id, found, keyPlies.size);
+      completeBlock(blockId);
       playSound('end');
     }
-  }, [done, found, keyPlies.size, game.id, saveScore]);
+  }, [done, found, keyPlies.size, game.id, saveScore, blockId]);
 
   const advance = (credit: boolean) => {
     if (credit) setFound((f) => f + 1);

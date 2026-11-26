@@ -31,10 +31,12 @@ import { ExplorerScreen } from './screens/Explorer';
 import { InsightsScreen } from './screens/Insights';
 import { RetryMistakes } from './screens/RetryMistakes';
 import { WeeklyReport } from './screens/WeeklyReport';
+import { ArenaSetup, ArenaGameScreen } from './screens/Arena';
+import { ChessClock } from './screens/ChessClock';
 
 const TABS = [
   { path: '/', label: 'Today', icon: Sunrise, match: (p: string) => p === '/' },
-  { path: '/play', label: 'Play', icon: Swords, match: (p: string) => p.startsWith('/play') },
+  { path: '/play', label: 'Play', icon: Swords, match: (p: string) => p.startsWith('/play') || p.startsWith('/clock') },
   { path: '/puzzles', label: 'Puzzles', icon: Puzzle, match: (p: string) => p.startsWith('/puzzles') },
   { path: '/openings', label: 'Openings', icon: BookOpen, match: (p: string) => p.startsWith('/openings') || p.startsWith('/explorer') },
   { path: '/train', label: 'Train', icon: Target, match: (p: string) => p.startsWith('/train') || p.startsWith('/classics') || p.startsWith('/program') || p.startsWith('/vision') || p.startsWith('/endgames') || p.startsWith('/insights') || p.startsWith('/report') },
@@ -47,6 +49,9 @@ function route(path: string): ReactNode {
   if (p === '/' || p === '') return <Today />;
   if (p === '/play') return <PlaySetup />;
   if (p === '/play/game') return <GameScreen />;
+  if (p === '/play/arena') return <ArenaSetup key={path} />;
+  if (p === '/play/arena/game') return <ArenaGameScreen />;
+  if (p === '/clock') return <ChessClock />;
   if (p === '/puzzles') return <PuzzlesHub />;
   if (p === '/puzzles/play') return <PuzzleSession key={path} />;
   if (p === '/puzzles/rush') return <PuzzleRush key={path} />;

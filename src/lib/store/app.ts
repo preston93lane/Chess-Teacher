@@ -36,7 +36,7 @@ export interface GameMeta {
   black: string;
   result: string;
   myColor: Color | null;
-  source: 'bot' | 'pgn' | 'lichess' | 'chesscom' | 'practice';
+  source: 'bot' | 'pgn' | 'lichess' | 'chesscom' | 'practice' | 'local';
   opening?: string;
   eco?: string;
   botId?: string;
@@ -138,6 +138,9 @@ interface AppState {
   vision: Record<string, number>;
   recordVision: (mode: string, score: number) => void;
   drills: Record<string, DrillStat>;
+  /** Results in Chess960 and Fog of War against the bots. */
+  variantStats: Record<string, { w: number; d: number; l: number }>;
+  recordVariant: (mode: string, outcome: 'w' | 'd' | 'l') => void;
   /** grade: how cleanly a pass went ('hard' after hints or takebacks); failures reschedule a learned drill. */
   recordDrill: (id: string, passed: boolean, moves: number, grade?: Grade) => void;
   startProgram: (p: Omit<ActiveProgram, 'done' | 'checkpoints' | 'startedAt'>) => void;
@@ -214,6 +217,12 @@ export const useApp = create<AppState>()(
       recordVision: (mode, score) => {
         if ((get().vision[mode] ?? 0) < score) set({ vision: { ...get().vision, [mode]: score } });
         get().logActivity('puzzles');
+      },
+      variantStats: {},
+      recordVariant: (mode, outcome) => {
+        const cur = get().variantStats[mode] ?? { w: 0, d: 0, l: 0 };
+        set({ variantStats: { ...get().variantStats, [mode]: { ...cur, [outcome]: cur[outcome] + 1 } } });
+        get().logActivity('games');
       },
       drills: {},
       recordDrill: (id, passed, moves, grade) => {
@@ -371,10 +380,11 @@ export const useApp = create<AppState>()(
           program: data.program ?? null,
           vision: data.vision ?? {},
           drills: data.drills ?? {},
+          variantStats: data.variantStats ?? {},
           quiz: data.quiz ?? { best: {}, rounds: 0, history: [] },
         }),
       resetAll: () =>
-        set({ settings: defaultSettings, games: [], cards: {}, lessons: {}, repertoire: {}, activity: {}, plan: null, puzzles: defaultPuzzleStats, classics: {}, program: null, quiz: { best: {}, rounds: 0, history: [] }, vision: {}, drills: {} }),
+        set({ settings: defaultSettings, games: [], cards: {}, lessons: {}, repertoire: {}, activity: {}, plan: null, puzzles: defaultPuzzleStats, classics: {}, program: null, quiz: { best: {}, rounds: 0, history: [] }, vision: {}, drills: {}, variantStats: {} }),
     }),
     {
       name: 'outpost-state-v1',
@@ -393,6 +403,7 @@ export const useApp = create<AppState>()(
         quiz: s.quiz,
         vision: s.vision,
         drills: s.drills,
+        variantStats: s.variantStats,
       }),
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<AppState>;

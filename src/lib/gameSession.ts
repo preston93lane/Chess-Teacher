@@ -19,6 +19,8 @@ export interface GameConfig {
   block?: string;
   /** Bot personality (see lib/styles). */
   styleId?: string;
+  /** Blindfold training: pieces fade out, or are hidden entirely. */
+  blind?: 'fade' | 'hidden';
 }
 
 export interface LiveGame {

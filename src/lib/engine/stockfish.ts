@@ -22,6 +22,8 @@ export interface AnalysisResult {
 }
 
 export interface AnalyzeOptions {
+  /** Chess960 castling (king takes own rook in UCI). */
+  chess960?: boolean;
   depth?: number;
   movetime?: number;
   multipv?: number;
@@ -30,6 +32,7 @@ export interface AnalyzeOptions {
 }
 
 export interface PlayOptions {
+  chess960?: boolean;
   /** 0–20 Stockfish skill level. */
   skill?: number;
   /** Use UCI_LimitStrength with this Elo (1320–3190). */
@@ -237,7 +240,7 @@ class StockfishEngine {
   ): Promise<AnalysisResult> {
     const multipv = opts.multipv ?? 1;
     const depth = opts.depth ?? 14;
-    const key = `${fen}|${multipv}|${opts.searchmoves?.join(',') ?? ''}`;
+    const key = `${fen}|${multipv}|${opts.searchmoves?.join(',') ?? ''}|${opts.chess960 ? 960 : ''}`;
     const cached = this.cache.get(key);
     if (cached && cached.depth >= depth && !opts.movetime) {
       onInfo?.(cached);
@@ -251,6 +254,7 @@ class StockfishEngine {
       ['UCI_LimitStrength', 'false'],
       ['Skill Level', '20'],
       ['MultiPV', String(multipv)],
+      ['UCI_Chess960', opts.chess960 ? 'true' : 'false'],
     ];
     const commands = [`position fen ${fen}`, go.join(' ')];
     const res = await this.enqueue(fen, options, commands, multipv, onInfo, preempt);
@@ -277,6 +281,7 @@ class StockfishEngine {
       options.push(['Skill Level', String(opts.skill ?? 20)]);
     }
     options.push(['MultiPV', String(multipv)]);
+    options.push(['UCI_Chess960', opts.chess960 ? 'true' : 'false']);
     const commands: string[] = [`position fen ${fen}`];
     const go = ['go'];
     if (opts.depth) go.push('depth', String(opts.depth));

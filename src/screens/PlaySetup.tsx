@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Play } from 'lucide-react';
+import { ArrowRight, Play } from 'lucide-react';
 import { BOTS } from '../lib/bots';
 import { STYLES } from '../lib/styles';
 import { Chess, START_FEN, uid, type Color } from '../lib/chess/core';
@@ -26,6 +26,7 @@ export function PlaySetup() {
   const rating = estimateRating(games);
   const [botId, setBotId] = useState(q.get('bot') ?? suggestBot(rating).id);
   const [styleId, setStyleId] = useState(q.get('style') ?? 'balanced');
+  const [blind, setBlind] = useState<'off' | 'fade' | 'hidden'>((q.get('blind') as 'fade' | 'hidden') ?? 'off');
   const [color, setColor] = useState<'w' | 'b' | 'random'>((q.get('side') as Color) ?? 'w');
   const [mode, setMode] = useState<StartMode>(q.get('opening') ? 'opening' : q.get('fen') ? 'fen' : 'standard');
   const [openingId, setOpeningId] = useState(q.get('opening') ?? OPENINGS[0].id);
@@ -71,6 +72,7 @@ export function PlaySetup() {
         timeControl: preset.tc,
         block: q.get('block') ?? undefined,
         styleId: styleId === 'balanced' ? undefined : styleId,
+        blind: blind === 'off' ? undefined : blind,
       },
       clock: preset.tc ? { w: preset.tc.initial, b: preset.tc.initial, running: null, since: null } : undefined,
       sans: [...presetSans],
@@ -97,6 +99,14 @@ export function PlaySetup() {
           </span>
         </button>
       )}
+
+      <button className="program-cta" onClick={() => navigate('/play/arena')}>
+        <span>
+          <strong>More ways to play</strong>
+          <span className="muted small">Chess960, Fog of War, two players on one device, and a chess clock for real boards.</span>
+        </span>
+        <ArrowRight size={18} />
+      </button>
 
       <Section title="Opponent">
         <div className="bot-grid" role="radiogroup" aria-label="Opponent">
@@ -128,6 +138,13 @@ export function PlaySetup() {
         <p className="muted small mt8">
           {STYLES.find((st) => st.id === styleId)?.blurb}
           {styleId !== 'balanced' && mode === 'opening' ? ' (In opening practice the bot follows the chosen opening first.)' : ''}
+        </p>
+      </Section>
+
+      <Section title="Board">
+        <Segmented value={blind} onChange={setBlind} options={[{ value: 'off', label: 'Normal' }, { value: 'fade', label: 'Fading pieces' }, { value: 'hidden', label: 'Blindfold' }]} />
+        <p className="muted small mt8">
+          {blind === 'fade' ? 'Pieces fade out over the first 20 moves — keep the position in your head. Hold the eye button to peek.' : blind === 'hidden' ? 'No pieces on the board at all: play from memory and the move list. Hold the eye button to peek.' : 'Visualization training: try Fading pieces, then Blindfold.'}
         </p>
       </Section>
 

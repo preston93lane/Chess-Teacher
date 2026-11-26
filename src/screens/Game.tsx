@@ -12,6 +12,7 @@ import {
   ScanSearch,
   SlidersHorizontal,
   Undo2,
+  Eye,
 } from 'lucide-react';
 import { Chess, applySan, uciOf, type PieceSymbol, type Square } from '../lib/chess/core';
 import { useSession, type LiveGame } from '../lib/gameSession';
@@ -338,6 +339,10 @@ function LiveGameView({ game }: { game: LiveGame }) {
       });
   }, [fen, turn, config.userColor, game.status, reviewing, opening, bot, style, config.startFen, game.sans, patch, tc, patchClock, config.presetSans.length, moves]);
 
+  // ---- blindfold training ----
+  const [peeking, setPeeking] = useState(false);
+  const blindOpacity = !config.blind || peeking || game.status !== 'playing' ? 1 : config.blind === 'hidden' ? 0 : Math.max(0, 1 - game.sans.length / 40);
+
   // ---- premoves: queued while the bot thinks, played as soon as it is our turn ----
   const [premove, setPremove] = useState<{ from: Square; to: Square; promotion?: PieceSymbol } | null>(null);
   const premoveRef = useRef(premove);
@@ -577,6 +582,8 @@ function LiveGameView({ game }: { game: LiveGame }) {
                 orientation={orientation}
                 movable={isLive && userTurn && !reviewing ? config.userColor : null}
                 onMove={onMove}
+                pieceOpacity={blindOpacity}
+                showDests={!config.blind}
                 premoveColor={isLive && !userTurn && game.status === 'playing' ? config.userColor : null}
                 onPremove={setPremove}
                 premove={premove ? [premove.from, premove.to] : null}
@@ -599,6 +606,18 @@ function LiveGameView({ game }: { game: LiveGame }) {
               </IconButton>
             </div>
             <div className="controls-group">
+              {config.blind && game.status === 'playing' && (
+                <button
+                  className={`icon-btn${peeking ? ' is-on' : ''}`}
+                  aria-label="Hold to peek at the pieces"
+                  onPointerDown={() => setPeeking(true)}
+                  onPointerUp={() => setPeeking(false)}
+                  onPointerLeave={() => setPeeking(false)}
+                  onContextMenu={(e) => e.preventDefault()}
+                >
+                  <Eye />
+                </button>
+              )}
               <IconButton label="Take back" onClick={takeBack} disabled={game.sans.length <= config.presetSans.length}>
                 <Undo2 />
               </IconButton>

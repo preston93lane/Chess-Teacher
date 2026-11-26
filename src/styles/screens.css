@@ -634,3 +634,32 @@
 .weekly-card { position: relative; display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: left; padding: 12px 40px 12px 14px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line-soft); border-left: 3px solid var(--accent-viz); margin: 10px 0; }
 .weekly-card-title { font-weight: 700; }
 .weekly-card-go { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+
+/* ── Arena: variants and two-player ────────────────────────── */
+.mode-cards { display: grid; gap: 10px; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.arena-board { position: relative; }
+.pass-shield { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px; border: 0; border-radius: 8px; background: var(--bg-deep); color: var(--text); text-align: center; }
+.pass-shield strong { font-size: 24px; }
+.pass-shield span { color: var(--muted); }
+.player-strip { display: flex; align-items: center; gap: 10px; padding: 8px 2px; }
+.player-strip .player-name { flex: 1; font-weight: 700; }
+.player-strip.is-turn .player-name { color: var(--text); }
+.player-strip.is-flipped { transform: rotate(180deg); }
+.arena-moves { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 14px; }
+.arena-move .faint { margin-right: 4px; }
+
+/* ── Chess clock ───────────────────────────────────────────── */
+.cc { position: fixed; inset: 0; z-index: 60; display: grid; grid-template-rows: 1fr auto 1fr; background: var(--bg-deep); padding: calc(var(--safe-t) + 8px) 8px calc(var(--safe-b) + 8px); gap: 8px; }
+.cc-face { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 22px; background: var(--surface); color: var(--muted); touch-action: manipulation; }
+.cc-top { transform: rotate(180deg); }
+.cc-face.is-running { background: var(--primary); color: var(--primary-ink); }
+.cc-face.is-low.is-running { background: var(--t-mistake); color: #1a0f05; }
+.cc-face.is-flag { background: var(--t-blunder); color: #fff; }
+.cc-time { font-size: clamp(64px, 22vw, 140px); font-weight: 800; font-stretch: 80%; line-height: 1; font-variant-numeric: tabular-nums; }
+.cc-meta { font-size: 15px; font-weight: 600; opacity: 0.8; }
+.cc-bar { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.cc-btn { width: 52px; height: 44px; display: grid; place-items: center; border-radius: 12px; border: 0; background: var(--surface-2); color: var(--text); }
+.cc-btn:disabled { opacity: 0.4; }
+.cc-tc { min-width: 64px; text-align: center; font-weight: 700; color: var(--muted); }
+.chip.is-on { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }

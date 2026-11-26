@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Microscope, Upload } from 'lucide-react';
+import { Microscope, Upload, UserSearch } from 'lucide-react';
 import { useApp, type GameMeta } from '../lib/store/app';
 import { navigate } from '../lib/router';
 import { Button, Empty, Header, Segmented } from '../components/ui';
@@ -48,6 +48,9 @@ export function Games() {
           <>
             <Button size="sm" variant="secondary" icon={<Microscope size={16} />} onClick={() => navigate('/analysis')}>
               <span className="hide-sm">Analysis</span>
+            </Button>
+            <Button size="sm" variant="secondary" icon={<UserSearch size={16} />} onClick={() => navigate('/scout')}>
+              <span className="hide-sm">Scout</span>
             </Button>
             <Button size="sm" icon={<Upload size={16} />} onClick={() => navigate('/import')}>
               Import

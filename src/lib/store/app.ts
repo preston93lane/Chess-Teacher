@@ -5,6 +5,7 @@ import type { Color } from '../chess/core';
 import { newCardState, schedule, type CardState, type Grade } from '../srs/scheduler';
 import { buildDay, getProgram, type ActiveProgram } from '../program';
 import { linesOf, type Repertoire } from '../repertoire';
+import type { ScoutProfile } from '../scout';
 
 export type ThemePref = 'dark' | 'light' | 'system';
 export type BoardTheme = 'slate' | 'walnut' | 'brown' | 'green' | 'blue' | 'sage' | 'purple' | 'coral' | 'mono' | 'night';
@@ -142,6 +143,10 @@ interface AppState {
   /** Results in Chess960 and Fog of War against the bots. */
   /** Your own repertoires (built in the repertoire builder). */
   customReps: Record<string, Repertoire>;
+  /** Opponents you have scouted. */
+  scouts: Record<string, ScoutProfile>;
+  saveScout: (p: ScoutProfile) => void;
+  deleteScout: (key: string) => void;
   saveRep: (rep: Repertoire) => void;
   deleteRep: (id: string) => void;
   variantStats: Record<string, { w: number; d: number; l: number }>;
@@ -222,6 +227,18 @@ export const useApp = create<AppState>()(
       recordVision: (mode, score) => {
         if ((get().vision[mode] ?? 0) < score) set({ vision: { ...get().vision, [mode]: score } });
         get().logActivity('puzzles');
+      },
+      scouts: {},
+      saveScout: (p) => {
+        // Keep the eight most recent scouting reports.
+        const all = { ...get().scouts, [p.key]: p };
+        const keep = Object.values(all).sort((a, b) => b.fetchedAt - a.fetchedAt).slice(0, 8);
+        set({ scouts: Object.fromEntries(keep.map((x) => [x.key, x])) });
+      },
+      deleteScout: (key) => {
+        const all = { ...get().scouts };
+        delete all[key];
+        set({ scouts: all });
       },
       customReps: {},
       saveRep: (rep) => {
@@ -414,10 +431,11 @@ export const useApp = create<AppState>()(
           drills: data.drills ?? {},
           variantStats: data.variantStats ?? {},
           customReps: data.customReps ?? {},
+          scouts: data.scouts ?? {},
           quiz: data.quiz ?? { best: {}, rounds: 0, history: [] },
         }),
       resetAll: () =>
-        set({ settings: defaultSettings, games: [], cards: {}, lessons: {}, repertoire: {}, activity: {}, plan: null, puzzles: defaultPuzzleStats, classics: {}, program: null, quiz: { best: {}, rounds: 0, history: [] }, vision: {}, drills: {}, variantStats: {}, customReps: {} }),
+        set({ settings: defaultSettings, games: [], cards: {}, lessons: {}, repertoire: {}, activity: {}, plan: null, puzzles: defaultPuzzleStats, classics: {}, program: null, quiz: { best: {}, rounds: 0, history: [] }, vision: {}, drills: {}, variantStats: {}, customReps: {}, scouts: {} }),
     }),
     {
       name: 'outpost-state-v1',
@@ -438,6 +456,7 @@ export const useApp = create<AppState>()(
         drills: s.drills,
         variantStats: s.variantStats,
         customReps: s.customReps,
+        scouts: s.scouts,
       }),
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<AppState>;

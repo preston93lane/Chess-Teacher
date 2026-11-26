@@ -200,7 +200,8 @@ export function PlaySetup() {
                     {o.name} ({o.side === 'w' ? 'White' : 'Black'} repertoire)
                   </option>
                 ))}
-                              {Object.values(customReps).length > 0 && (
+                {openingId.startsWith('scout:') && <option value={openingId}>{opening.name}</option>}
+                {Object.values(customReps).length > 0 && (
                   <optgroup label="Your repertoires">
                     {Object.values(customReps).map((r) => (
                       <option key={r.id} value={`rep:${r.id}`}>{r.name}</option>
@@ -209,6 +210,7 @@ export function PlaySetup() {
                 )}
               </select>
             </label>
+            {!openingId.startsWith('scout:') && (
             <label className="field">
               <span className="field-label">Line</span>
               <select className="select" value={lineId} onChange={(e) => setLineId(e.target.value)}>
@@ -220,6 +222,7 @@ export function PlaySetup() {
                 ))}
               </select>
             </label>
+            )}
             <Toggle
               checked={skipBook}
               onChange={setSkipBook}

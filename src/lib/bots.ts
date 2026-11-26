@@ -1,5 +1,6 @@
 import { Chess, uciOf } from './chess/core';
 import { engine, type EngineLine } from './engine/stockfish';
+import { pickStyled, styleMargin, type StyleId } from './styles';
 
 export interface Bot {
   id: string;
@@ -40,7 +41,7 @@ export function getBot(id: string) {
 export async function botMove(
   fen: string,
   bot: Bot,
-  opts: { budgetMs?: number; pressure?: number } = {},
+  opts: { budgetMs?: number; pressure?: number; style?: StyleId } = {},
 ): Promise<string | null> {
   const chess = new Chess(fen);
   const legal = chess.moves({ verbose: true });
@@ -51,7 +52,8 @@ export async function botMove(
     const pick = legal[Math.floor(Math.random() * legal.length)];
     return uciOf(pick);
   }
-  const multipv = Math.max(p.multipv ?? 1, pressure > 0 ? 3 : 1);
+  const styled = opts.style && opts.style !== 'balanced';
+  const multipv = Math.max(p.multipv ?? 1, pressure > 0 ? 3 : 1, styled ? 4 : 1);
   // Search time never exceeds the human-like budget for this move.
   const movetime = p.movetime ? Math.min(p.movetime, Math.max(120, (opts.budgetMs ?? p.movetime) * 0.75)) : undefined;
   const res = await engine.play(fen, { skill: p.skill, elo: p.elo, depth: p.depth, movetime, multipv });
@@ -70,5 +72,7 @@ export async function botMove(
     if (near.length) return near[Math.floor(Math.random() * near.length)].pv[0];
     if (Math.random() < 0.12 * pressure && res.lines[1]?.pv[0]) return res.lines[1].pv[0];
   }
-  return res.bestmove ?? res.lines[0]?.pv[0] ?? uciOf(legal[0]);
+  const choice = res.bestmove ?? res.lines[0]?.pv[0] ?? uciOf(legal[0]);
+  if (styled) return pickStyled(opts.style!, fen, res.lines, styleMargin(bot.elo), choice) ?? choice;
+  return choice;
 }

@@ -24,9 +24,14 @@ export function Openings() {
         title="Openings"
         sub="Theory, ideas and plans. Learn a line, then drill it until it sticks."
         actions={
-          <button className="btn btn-primary btn-sm" onClick={() => navigate('/openings/quiz')}>
-            <span>Opening quiz</span>
-          </button>
+          <div className="row">
+            <button className="btn btn-secondary btn-sm" onClick={() => navigate('/explorer')}>
+              <span>Master explorer</span>
+            </button>
+            <button className="btn btn-primary btn-sm" onClick={() => navigate('/openings/quiz')}>
+              <span>Opening quiz</span>
+            </button>
+          </div>
         }
       />
       <Segmented

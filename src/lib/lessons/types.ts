@@ -21,6 +21,8 @@ export interface LessonSection {
   task?: LessonTask;
   /** Offer "Play this position vs the coach". */
   practice?: { side: Color; prompt: string };
+  /** Endgame drill id to practise this position against the engine. */
+  drill?: string;
 }
 
 export type Track = 'Pawn structures' | 'Pieces & squares' | 'Attack & defence' | 'Thinking skills' | 'Endgames';

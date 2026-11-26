@@ -1,4 +1,5 @@
-import { ArrowRight, Check, Play } from 'lucide-react';
+import { ArrowRight, ChartNoAxesColumn, Check, Crown, Database, Eye, Play } from 'lucide-react';
+import { ALL_DRILLS } from '../data/endgames';
 import { useApp, dueCards } from '../lib/store/app';
 import { navigate } from '../lib/router';
 import { LESSONS } from '../data/lessons';
@@ -20,6 +21,9 @@ export function Train() {
   const program = useApp((s) => s.program);
   const quizBest = useApp((s) => s.quiz.best.library);
   const removeCard = useApp((s) => s.removeCard);
+  const drills = useApp((s) => s.drills);
+  const visionBest = useApp((s) => s.vision.find);
+  const drillsPassed = ALL_DRILLS.filter((d) => drills[d.id]?.passed).length;
   const due = dueCards(cards);
   const all = Object.values(cards);
   const dueLines = due.filter((c) => c.kind === 'line').length;
@@ -74,6 +78,33 @@ export function Train() {
 
       <Section title="Opening quiz" action={<button className="link-btn" onClick={() => navigate('/openings/quiz')}>Start <ArrowRight size={14} /></button>}>
         <p className="muted">See a position, name the opening, then play the next theory move. {quizBest !== undefined ? `Best library score: ${quizBest}.` : ''}</p>
+      </Section>
+
+      <Section title="Skill trainers">
+        <div className="trainer-grid">
+          <button className="trainer-card" onClick={() => navigate('/endgames')}>
+            <Crown size={22} />
+            <span className="trainer-card-title">Endgame course</span>
+            <span className="muted small">Mates, pawn endings, fortresses and rook endings — drilled against the engine.</span>
+            <span className="faint small num">{drillsPassed}/{ALL_DRILLS.length} drills passed</span>
+          </button>
+          <button className="trainer-card" onClick={() => navigate('/vision')}>
+            <Eye size={22} />
+            <span className="trainer-card-title">Board vision</span>
+            <span className="muted small">Timed square, colour, diagonal and knight-route drills.</span>
+            <span className="faint small num">{visionBest ? `Best find-the-square: ${visionBest}` : 'Not tried yet'}</span>
+          </button>
+          <button className="trainer-card" onClick={() => navigate('/explorer')}>
+            <Database size={22} />
+            <span className="trainer-card-title">Opening explorer</span>
+            <span className="muted small">What masters play in every position, with results and model games.</span>
+          </button>
+          <button className="trainer-card" onClick={() => navigate('/insights')}>
+            <ChartNoAxesColumn size={22} />
+            <span className="trainer-card-title">Insights</span>
+            <span className="muted small">Accuracy trends, mistakes by phase, openings and time use.</span>
+          </button>
+        </div>
       </Section>
 
       <Section title="Topic tracks" action={<button className="link-btn" onClick={() => navigate('/train/plan')}>{track ? 'View plan' : 'Choose a plan'} <ArrowRight size={14} /></button>}>

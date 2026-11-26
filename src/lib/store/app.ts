@@ -97,7 +97,7 @@ export interface PuzzleStats {
   attempts: number;
   solved: number;
   failed: number;
-  history: { id: string; ok: boolean; rating: number; after: number; t: number }[];
+  history: { id: string; ok: boolean; rating: number; after: number; t: number; themes?: string[] }[];
   seen: string[];
   rush: Record<string, number>;
   dailyDone?: string;
@@ -123,13 +123,17 @@ interface AppState {
   puzzles: PuzzleStats;
   classics: Record<string, { best: number; total: number }>;
   program: ActiveProgram | null;
+  vision: Record<string, number>;
+  recordVision: (mode: string, score: number) => void;
+  drills: Record<string, { passed: boolean; attempts: number; bestMoves?: number }>;
+  recordDrill: (id: string, passed: boolean, moves: number) => void;
   startProgram: (p: Omit<ActiveProgram, 'done' | 'checkpoints' | 'startedAt'>) => void;
   stopProgram: () => void;
   completeBlock: (id: string | null | undefined) => boolean;
   quiz: { best: Record<string, number>; rounds: number; history: { source: string; score: number; max: number; t: number }[] };
   recordQuiz: (source: string, score: number, max: number) => void;
   recordClassic: (id: string, found: number, total: number) => void;
-  recordPuzzle: (r: { id: string; puzzleRating: number; ok: boolean; rated: boolean; newRating?: number; daily?: boolean }) => void;
+  recordPuzzle: (r: { id: string; puzzleRating: number; ok: boolean; rated: boolean; newRating?: number; daily?: boolean; themes?: string[] }) => void;
   recordRush: (mode: string, score: number) => void;
   updateSettings: (s: Partial<Settings>) => void;
   addGame: (g: GameMeta) => void;
@@ -192,6 +196,26 @@ export const useApp = create<AppState>()(
       puzzles: defaultPuzzleStats,
       classics: {},
       program: null,
+      vision: {},
+      recordVision: (mode, score) => {
+        if ((get().vision[mode] ?? 0) < score) set({ vision: { ...get().vision, [mode]: score } });
+        get().logActivity('puzzles');
+      },
+      drills: {},
+      recordDrill: (id, passed, moves) => {
+        const cur = get().drills[id] ?? { passed: false, attempts: 0 };
+        set({
+          drills: {
+            ...get().drills,
+            [id]: {
+              passed: cur.passed || passed,
+              attempts: cur.attempts + 1,
+              bestMoves: passed ? Math.min(cur.bestMoves ?? Infinity, moves) : cur.bestMoves,
+            },
+          },
+        });
+        get().logActivity('lessons');
+      },
       startProgram: (p) => set({ program: { ...p, done: [], checkpoints: [], startedAt: Date.now() } }),
       stopProgram: () => set({ program: null }),
       completeBlock: (id) => {
@@ -231,7 +255,7 @@ export const useApp = create<AppState>()(
         if (!cur || found > cur.best) set({ classics: { ...get().classics, [id]: { best: found, total } } });
         get().logActivity('lessons');
       },
-      recordPuzzle: ({ id, puzzleRating, ok, rated, newRating, daily }) => {
+      recordPuzzle: ({ id, puzzleRating, ok, rated, newRating, daily, themes }) => {
         const ps = get().puzzles;
         const rating = rated && newRating !== undefined ? newRating : ps.rating;
         set({
@@ -241,7 +265,7 @@ export const useApp = create<AppState>()(
             attempts: ps.attempts + (rated ? 1 : 0),
             solved: ps.solved + (ok ? 1 : 0),
             failed: ps.failed + (ok ? 0 : 1),
-            history: [{ id, ok, rating: puzzleRating, after: rating, t: Date.now() }, ...ps.history].slice(0, 300),
+            history: [{ id, ok, rating: puzzleRating, after: rating, t: Date.now(), ...(themes ? { themes } : {}) }, ...ps.history].slice(0, 500),
             seen: [id, ...ps.seen.filter((x) => x !== id)].slice(0, 4000),
             dailyDone: daily ? today() : ps.dailyDone,
           },
@@ -327,10 +351,12 @@ export const useApp = create<AppState>()(
           puzzles: { ...defaultPuzzleStats, ...(data.puzzles ?? {}) },
           classics: data.classics ?? {},
           program: data.program ?? null,
+          vision: data.vision ?? {},
+          drills: data.drills ?? {},
           quiz: data.quiz ?? { best: {}, rounds: 0, history: [] },
         }),
       resetAll: () =>
-        set({ settings: defaultSettings, games: [], cards: {}, lessons: {}, repertoire: {}, activity: {}, plan: null, puzzles: defaultPuzzleStats, classics: {}, program: null, quiz: { best: {}, rounds: 0, history: [] } }),
+        set({ settings: defaultSettings, games: [], cards: {}, lessons: {}, repertoire: {}, activity: {}, plan: null, puzzles: defaultPuzzleStats, classics: {}, program: null, quiz: { best: {}, rounds: 0, history: [] }, vision: {}, drills: {} }),
     }),
     {
       name: 'outpost-state-v1',
@@ -347,6 +373,8 @@ export const useApp = create<AppState>()(
         classics: s.classics,
         program: s.program,
         quiz: s.quiz,
+        vision: s.vision,
+        drills: s.drills,
       }),
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<AppState>;

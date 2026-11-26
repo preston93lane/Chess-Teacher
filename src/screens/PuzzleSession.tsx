@@ -82,7 +82,7 @@ export function PuzzleSession() {
       const scored = rated && !hint;
       const newRating = scored ? updateRating(ps.rating, puzzle.rating, r.ok, ps.attempts) : ps.rating;
       delta = scored ? newRating - ps.rating : undefined;
-      record({ id: puzzle.id, puzzleRating: puzzle.rating, ok: r.ok, rated: scored, newRating, daily: mode === 'daily' });
+      record({ id: puzzle.id, puzzleRating: puzzle.rating, ok: r.ok, rated: scored, newRating, daily: mode === 'daily', themes: puzzle.themes });
       setStreak(r.ok ? streak + 1 : 0);
       if (!r.ok) {
         const s = puzzleStart(puzzle);

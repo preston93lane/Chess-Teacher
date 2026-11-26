@@ -1,4 +1,5 @@
 import type { Lesson } from '../../lib/lessons/types';
+import { ENDGAME_LESSONS } from '../endgames';
 
 const QGA_IQP =
   '1.d4 d5 2.c4 dxc4 3.Nf3 Nf6 4.e3 e6 5.Bxc4 c5 6.O-O a6 7.a4 Nc6 8.Qe2 cxd4 9.Rd1 Be7 10.exd4 O-O 11.Nc3';
@@ -471,6 +472,7 @@ export const LESSONS: Lesson[] = [
             'Rd1+ Ke7 2.Rd4! (the bridge) and the king walks out: Kc7, Kb6, Kc6, Kb5 and Rb4 blocks the checks. Rc4 and Rc7+ are other ways into the same idea.',
         },
         practice: { side: 'w', prompt: 'Win the Lucena position against the coach.' },
+        drill: 'lucena',
       },
       {
         title: 'Philidor: the third-rank defence',
@@ -487,10 +489,13 @@ export const LESSONS: Lesson[] = [
             'Waiting moves with the king, or keeping the rook on the sixth, draw. If e6 comes, the rook goes to the back rank and checks from behind. Never put the rook on d6 or f6 here — the pawn or king takes it.',
         },
         practice: { side: 'b', prompt: 'Defend the Philidor position.' },
+        drill: 'philidor',
       },
     ],
   },
 ];
+
+LESSONS.push(...ENDGAME_LESSONS);
 
 export function getLesson(id: string) {
   return LESSONS.find((l) => l.id === id);

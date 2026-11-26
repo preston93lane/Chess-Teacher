@@ -16,6 +16,7 @@ import {
 import { Chess, applySan, uciOf, type PieceSymbol, type Square } from '../lib/chess/core';
 import { useSession, type LiveGame } from '../lib/gameSession';
 import { getBot, botMove } from '../lib/bots';
+import { getStyle, styleBookMove } from '../lib/styles';
 import { engine, CancelledError, type AnalysisResult } from '../lib/engine/stockfish';
 import { reviewMove, BAD_CLASSES, type MoveReview } from '../lib/coach/explain';
 import { lineScore, winPct } from '../lib/coach/eval';
@@ -110,6 +111,8 @@ function LiveGameView({ game }: { game: LiveGame }) {
   const updateSettings = useApp((s) => s.updateSettings);
   const { config } = game;
   const bot = getBot(config.botId);
+  const style = getStyle(config.styleId);
+  const botLabel = style.id === 'balanced' ? bot.name : `${bot.name} · ${style.name}`;
   const opening = config.openingId ? getOpening(config.openingId) : undefined;
   const { fens, moves } = useMemo(() => replay(config.startFen, game.sans), [config.startFen, game.sans]);
   const fen = fens[fens.length - 1];
@@ -192,8 +195,8 @@ function LiveGameView({ game }: { game: LiveGame }) {
       const meta = {
         id: g.id,
         createdAt: g.createdAt,
-        white: g.config.userColor === 'w' ? you : bot.name,
-        black: g.config.userColor === 'b' ? you : bot.name,
+        white: g.config.userColor === 'w' ? you : botLabel,
+        black: g.config.userColor === 'b' ? you : botLabel,
         result,
         myColor: g.config.userColor,
         source: (g.config.openingId ? 'practice' : 'bot') as 'practice' | 'bot',
@@ -220,6 +223,7 @@ function LiveGameView({ game }: { game: LiveGame }) {
         startFen: g.config.startFen,
         sans: g.sans,
         openingId: g.config.openingId,
+        ...(g.config.timeControl && g.clockLog ? { clocks: useSession.getState().game?.clockLog ?? g.clockLog, tc: { initial: g.config.timeControl.initial, increment: g.config.timeControl.increment } } : {}),
       });
       addGame(meta);
       logActivity('games');
@@ -227,7 +231,7 @@ function LiveGameView({ game }: { game: LiveGame }) {
       if (g.config.block) useApp.getState().completeBlock(g.config.block);
       patch({ saved: true });
     },
-    [patch, addGame, logActivity, markPlanStep, bot.name],
+    [patch, addGame, logActivity, markPlanStep, botLabel],
   );
 
   useEffect(() => {
@@ -299,14 +303,18 @@ function LiveGameView({ game }: { game: LiveGame }) {
       if (timed && game.sans.length - config.presetSans.length >= 2) patchClock((c) => ({ ...c, running: botColor, since: t0 }));
       let uci: string | null = null;
       const book = opening ? openingBookMoves(opening, fen) : [];
-      const pick = pickWeighted(book);
+      let pick: { uci: string } | null | undefined = pickWeighted(book);
+      if (!pick && !opening && style.id !== 'balanced') {
+        const styleUci = await styleBookMove(style, config.startFen, game.sans, fen, botColor).catch(() => null);
+        if (styleUci) pick = { uci: styleUci };
+      }
       const remaining = startState?.clock ? remainingNow(startState.clock, botColor) : 0;
       const budget = tc
         ? botThinkTime({ fen, bot, tc, remaining, lastMoveSan: game.sans[game.sans.length - 1], lastMoveTo: moves[moves.length - 1]?.to, isBookMove: !!pick })
         : 300 + Math.random() * 700;
       const pressure = tc ? timePressure(remaining, tc) : 0;
       if (pick) uci = pick.uci;
-      else uci = await botMove(fen, bot, { budgetMs: budget, pressure });
+      else uci = await botMove(fen, bot, { budgetMs: budget, pressure, style: style.id });
       // Take a human amount of time — never instant, never longer than planned.
       const wait = budget - (Date.now() - t0);
       if (wait > 0) await new Promise((r) => setTimeout(r, wait));
@@ -315,9 +323,10 @@ function LiveGameView({ game }: { game: LiveGame }) {
       const c = new Chess(fen);
       const m = c.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: (uci[4] as PieceSymbol) || undefined });
       soundForSan(m.san);
+      const botClock = tc && current.clock ? chargeMove(current.clock, botColor, tc) : null;
       patch({
         sans: [...current.sans, m.san],
-        ...(tc && current.clock ? { clock: chargeMove(current.clock, botColor, tc) } : {}),
+        ...(botClock ? { clock: botClock, clockLog: { ...current.clockLog, [current.sans.length]: botClock[botColor] } } : {}),
       });
     })()
       .catch((e) => {
@@ -327,7 +336,7 @@ function LiveGameView({ game }: { game: LiveGame }) {
         setThinking(false);
         thinkingFor.current = null;
       });
-  }, [fen, turn, config.userColor, game.status, reviewing, opening, bot, game.sans.length, patch, tc, patchClock, config.presetSans.length, moves]);
+  }, [fen, turn, config.userColor, game.status, reviewing, opening, bot, style, config.startFen, game.sans, patch, tc, patchClock, config.presetSans.length, moves]);
 
   // ---- user moves ----
   const onMove = useCallback(
@@ -365,10 +374,11 @@ function LiveGameView({ game }: { game: LiveGame }) {
       const doReview = config.coachLive;
       if (doReview) setReviewing(true);
       const ckNow = useSession.getState().game?.clock;
+      const myClock = tc && ckNow ? chargeMove(ckNow, config.userColor, tc) : null;
       patch({
         sans: [...game.sans, m.san],
         bookNotes: bookNote ? { ...game.bookNotes, [ply]: bookNote } : game.bookNotes,
-        ...(tc && ckNow ? { clock: chargeMove(ckNow, config.userColor, tc) } : {}),
+        ...(myClock ? { clock: myClock, clockLog: { ...useSession.getState().game?.clockLog, [game.sans.length]: myClock[config.userColor] } } : {}),
       });
       if (!doReview) return;
       try {
@@ -514,7 +524,7 @@ function LiveGameView({ game }: { game: LiveGame }) {
     ) : (
       <div className="player-tag">
         <span className={`pill-color pill-${c}`} />
-        {bot.name} <span className="muted num">{bot.elo}</span>
+        {botLabel} <span className="muted num">{bot.elo}</span>
         {thinking && <span className="thinking"><Spinner /></span>}
         {clockFor(c)}
       </div>

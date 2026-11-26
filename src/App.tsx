@@ -24,13 +24,17 @@ import { PuzzleRush } from './screens/PuzzleRush';
 import { ClassicsList, ClassicScreen } from './screens/Classics';
 import { OpeningQuiz } from './screens/OpeningQuiz';
 import { ProgramScreen } from './screens/Program';
+import { VisionTrainer } from './screens/Vision';
+import { EndgamesHub, DrillScreen } from './screens/Endgames';
+import { ExplorerScreen } from './screens/Explorer';
+import { InsightsScreen } from './screens/Insights';
 
 const TABS = [
   { path: '/', label: 'Today', icon: Sunrise, match: (p: string) => p === '/' },
   { path: '/play', label: 'Play', icon: Swords, match: (p: string) => p.startsWith('/play') },
   { path: '/puzzles', label: 'Puzzles', icon: Puzzle, match: (p: string) => p.startsWith('/puzzles') },
-  { path: '/openings', label: 'Openings', icon: BookOpen, match: (p: string) => p.startsWith('/openings') },
-  { path: '/train', label: 'Train', icon: Target, match: (p: string) => p.startsWith('/train') || p.startsWith('/classics') || p.startsWith('/program') },
+  { path: '/openings', label: 'Openings', icon: BookOpen, match: (p: string) => p.startsWith('/openings') || p.startsWith('/explorer') },
+  { path: '/train', label: 'Train', icon: Target, match: (p: string) => p.startsWith('/train') || p.startsWith('/classics') || p.startsWith('/program') || p.startsWith('/vision') || p.startsWith('/endgames') || p.startsWith('/insights') },
   { path: '/games', label: 'Games', icon: History, match: (p: string) => p.startsWith('/games') || p.startsWith('/analysis') || p.startsWith('/import') },
 ];
 
@@ -46,6 +50,11 @@ function route(path: string): ReactNode {
   if (p === '/openings') return <Openings />;
   if (p === '/openings/quiz') return <OpeningQuiz key={path} />;
   if (p === '/program') return <ProgramScreen />;
+  if (p === '/vision') return <VisionTrainer />;
+  if (p === '/explorer') return <ExplorerScreen key={path} />;
+  if (p === '/insights') return <InsightsScreen />;
+  if (p === '/endgames') return <EndgamesHub />;
+  if ((m = match('/endgames/:id', p))) return <DrillScreen key={p} id={m.id} />;
   if ((m = match('/openings/:id', p))) return <OpeningDetail id={m.id} />;
   if ((m = match("/openings/:id/:mode/:line", p))) return <LineTrainer key={p} openingId={m.id} lineId={m.line} mode={m.mode as 'learn' | 'drill'} />;
   if (p === '/train') return <Train />;

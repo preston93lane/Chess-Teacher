@@ -29,6 +29,7 @@ import { Board, type Arrow } from '../components/Board';
 import { EvalBar } from '../components/EvalBar';
 import { EvalGraph } from '../components/EvalGraph';
 import { MoveList } from '../components/MoveList';
+import { MasterMoves } from '../components/MasterMoves';
 import { VerdictCard, EngineLines, PositionReportView } from '../components/Coach';
 import { InsightsPanel } from '../components/Insights';
 import { MoveBreakdown } from '../components/MoveBreakdown';
@@ -37,7 +38,7 @@ import { Button, Glyph, Header, IconButton, Meter, Segmented, Sheet, Spinner, To
 import { toast } from '../components/Toast';
 import { getOpening } from '../lib/openings/book';
 
-type Tab = 'coach' | 'summary' | 'moves' | 'engine';
+type Tab = 'coach' | 'summary' | 'moves' | 'engine' | 'masters';
 
 interface Source {
   startFen: string;
@@ -420,11 +421,11 @@ function AnalysisView({ gameId, source, autoReview }: { gameId?: string; source:
           )}
 
           <div className="tabs" role="tablist">
-            {(['coach', 'summary', 'moves', 'engine'] as Tab[])
+            {(['coach', 'summary', 'moves', 'masters', 'engine'] as Tab[])
               .filter((t) => t !== 'summary' || review)
               .map((t) => (
                 <button key={t} role="tab" aria-selected={tab === t} className={`tab${tab === t ? ' is-on' : ''}`} onClick={() => setTab(t)}>
-                  {t === 'coach' ? 'Coach' : t === 'summary' ? 'Summary' : t === 'moves' ? 'Moves' : 'Engine'}
+                  {t === 'coach' ? 'Coach' : t === 'summary' ? 'Summary' : t === 'moves' ? 'Moves' : t === 'masters' ? 'Masters' : 'Engine'}
                 </button>
               ))}
           </div>
@@ -484,6 +485,23 @@ function AnalysisView({ gameId, source, autoReview }: { gameId?: string; source:
                   onPlay={(u) => onMove({ from: u.slice(0, 2) as Square, to: u.slice(2, 4) as Square, promotion: (u[4] as PieceSymbol) || undefined })}
                 />
               )}
+            </div>
+          )}
+
+          {tab === 'masters' && (
+            <div className="panel">
+              <MasterMoves
+                fen={fen}
+                showGames={false}
+                onPlay={(san) => {
+                  try {
+                    const m = new Chess(fen).move(san);
+                    onMove({ from: m.from, to: m.to, promotion: m.promotion });
+                  } catch {
+                    /* not legal here */
+                  }
+                }}
+              />
             </div>
           )}
 

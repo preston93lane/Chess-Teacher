@@ -10,6 +10,9 @@ export interface StoredGame {
   review?: GameReview;
   /** Practice context, when the game started from an opening. */
   openingId?: string;
+  /** Timed games: mover's remaining ms after each ply (by ply index), and the control. */
+  clocks?: Record<number, number>;
+  tc?: { initial: number; increment: number };
 }
 
 const key = (id: string) => `game:${id}`;

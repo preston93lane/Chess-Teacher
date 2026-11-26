@@ -82,9 +82,9 @@ export const PROGRAMS: ProgramTemplate[] = [
     level: 'Intermediate',
     weeks: [
       { title: 'Forks, loose pieces, mate in one', focus: 'See every loose piece and every checking square.', tactics: ['fork', 'hangingPiece', 'mateIn1'], lessons: ['calculation'], openings: [], classics: ['opera', 'lasker-thomas'] },
-      { title: 'Pins, skewers, mate in two', focus: 'Pieces on lines are targets.', tactics: ['pin', 'skewer', 'mateIn2'], lessons: [], openings: [], classics: ['reti-tartakower', 'immortal'] },
-      { title: 'Discoveries, double check, deflection', focus: 'Moving one piece unleashes another.', tactics: ['discoveredAttack', 'doubleCheck', 'deflection'], lessons: [], openings: [], classics: ['evergreen', 'torre-lasker'] },
-      { title: 'Sacrifices and long combinations', focus: 'Calculate to the end of forcing lines.', tactics: ['sacrifice', 'attraction', 'clearance', 'mateIn3'], lessons: [], openings: [], classics: ['byrne-fischer', 'kasparov-topalov'] },
+      { title: 'Pins, skewers, mate in two', focus: 'Pieces on lines are targets.', tactics: ['pin', 'skewer', 'mateIn2'], lessons: ['eg-basic-mates'], openings: [], classics: ['reti-tartakower', 'immortal'] },
+      { title: 'Discoveries, double check, deflection', focus: 'Moving one piece unleashes another.', tactics: ['discoveredAttack', 'doubleCheck', 'deflection'], lessons: ['eg-opposition'], openings: [], classics: ['evergreen', 'torre-lasker'] },
+      { title: 'Sacrifices and long combinations', focus: 'Calculate to the end of forcing lines.', tactics: ['sacrifice', 'attraction', 'clearance', 'mateIn3'], lessons: ['eg-pawn-majorities'], openings: [], classics: ['byrne-fischer', 'kasparov-topalov'] },
     ],
   },
   {
@@ -112,7 +112,7 @@ export const PROGRAMS: ProgramTemplate[] = [
       { title: 'The minority attack', focus: 'Create a weakness, then win it.', tactics: ['xRayAttack'], lessons: ['minority-attack'], openings: [{ id: 'queens-gambit', lines: ['exchange-minority', 'tartakower'] }], classics: ['fischer-spassky-6'] },
       { title: 'Isolani & hanging pawns', focus: 'Dynamic pawns vs static weaknesses.', tactics: ['intermezzo'], lessons: ['iqp', 'hanging-pawns'], openings: [{ id: 'caro-kann', lines: ['panov'] }], classics: ['rotlewi-rubinstein'] },
       { title: 'Space & prophylaxis', focus: 'Restrict first, then strike.', tactics: ['defensiveMove'], lessons: ['hedgehog', 'prophylaxis'], openings: [{ id: 'english', lines: ['symmetrical', 'reversed-sicilian'] }], classics: ['botvinnik-capablanca'] },
-      { title: 'Endgame technique', focus: 'Convert the advantage you built.', tactics: ['rookEndgame', 'pawnEndgame'], lessons: ['rook-endgames'], openings: [{ id: 'catalan', lines: ['open-main'] }], classics: ['short-timman'] },
+      { title: 'Endgame technique', focus: 'Convert the advantage you built.', tactics: ['rookEndgame', 'pawnEndgame'], lessons: ['rook-endgames', 'eg-pawn-majorities', 'eg-fortress'], openings: [{ id: 'catalan', lines: ['open-main'] }], classics: ['short-timman'] },
     ],
   },
 ];

@@ -4,7 +4,7 @@ Outpost is a chess training app for intermediate and advanced players. It runs e
 
 ## What it does
 
-**Play the coach.** Ten bot levels, from about 800 to full-strength Stockfish. With the live coach on, every move you make is graded (`!!`, `!`, `★`, `?!`, `?`, `??`…) and explained in plain language: what the move does, what it allowed, and what was better. Tiered hints go from a threat check, to the plan, to candidate pieces, to the best move. Take back a mistake and try again.
+**Play the coach.** Ten bot levels, from about 800 to full-strength Stockfish, and six playing styles: Balanced, The Attacker, The Wall, The Gambiteer, The Professor and The Hypermodern. A style gives the bot its own opening repertoire and a taste for certain moves (checks and pawn storms, safe trades, quiet improving moves, fianchettoes) among those its level would consider anyway, so it plays differently without getting stronger or weaker. With the live coach on, every move you make is graded (`!!`, `!`, `★`, `?!`, `?`, `??`…) and explained in plain language: what the move does, what it allowed, and what was better. Tiered hints go from a threat check, to the plan, to candidate pieces, to the best move. Take back a mistake and try again.
 
 **Choose how much coaching you get.** Tap the sliders button in a game, or go to Settings, to switch three things on or off:
 
@@ -44,6 +44,30 @@ To rebuild the set, run `scripts/build-puzzles.py`.
 - Checkpoints at week 4 and at the end measure progress against your starting point.
 - Blocks tick themselves off as you finish them.
 
+**Endgame course.** Seven technique lessons and 17 drills against a full-strength engine that defends (or attacks) as well as it can:
+
+- Basic mates: queen, rook, two bishops, and bishop and knight (the final net, getting out of the wrong corner, and the whole mate from the centre). Mate before the 50-move rule.
+- King and pawn: the rule of the square, Réti's study, key squares and the opposition.
+- Unbalanced pawns: the outside passed pawn, the breakthrough, the protected passer, and healthy against crippled majorities (the Exchange Ruy Lopez ending).
+- Queen against a pawn on the seventh (the staircase win, and the stalemate defence with bishop and rook pawns), and fortresses with rook pawns and the wrong bishop.
+- Rook endings: Lucena and Philidor.
+
+A drill is passed by reaching its goal: checkmate, promoting safely, or holding the draw for a set number of moves. If a move throws the result away, the engine confirms it with a deeper search, then offers a takeback and a better move. Every position and claim is checked with `scripts/validate-endgames.ts`.
+
+**Opening explorer.** What masters play in each position: 85,137 over-the-board games (classical, rapid and blitz events) with both players rated 2300+, from the Lichess broadcast database (CC0), stored on the device. For each move it shows the number of games, White wins, draws and Black wins, and the average rating, plus the strongest games that reached the position, which you can play through. It is also a *Masters* tab on the analysis board and a *Master games* button on every opening. To rebuild it, run `scripts/fetch-broadcasts.sh <months> | node scripts/build-explorer.mjs`.
+
+**Insights.** A dashboard built from your games, puzzles and training:
+
+- Your accuracy trend, and accuracy by phase.
+- Inaccuracies, mistakes and blunders per 40 moves.
+- Results as White and Black, and your score and accuracy per opening.
+- Time management in timed games: think time per phase, and how many of your errors came when you were short of time.
+- Puzzle rating over time, and your strongest and weakest puzzle themes.
+- An activity calendar.
+- Recommendations that link to the right trainer.
+
+**Board vision.** Timed drills: find a named square on a board without coordinates, name a highlighted square, light or dark square, knight-route distances, and same-diagonal checks.
+
 **Opening library.** 14 openings with 58 annotated lines for both colours: Ruy Lopez, Italian, Queen's Gambit, London, Catalan, English, Najdorf, Dragon, French, Caro-Kann, King's Indian, Nimzo-Indian, Grünfeld and Slav. Each one comes with its main ideas for both sides, typical structures, middlegame plans and traps. Every line has been checked move by move with Stockfish.
 
 - **Learn** walks you through a line with commentary on each move.
@@ -56,7 +80,7 @@ To rebuild the set, run `scripts/build-puzzles.py`.
 
 **Spaced repetition.** Opening lines and positions from your own games are scheduled with an SM-2-style algorithm, and the Train tab shows what is due.
 
-**Strategy lessons.** 12 interactive lessons, each with tasks checked by the engine: the isolated queen's pawn, the minority attack, hanging pawns, pawn chains, the hedgehog, opposite-side castling, knight against a bad bishop, outposts, open files, prophylaxis, calculation and the Lucena and Philidor positions.
+**Strategy lessons.** 12 interactive strategy lessons (plus the seven endgame lessons), each with tasks checked by the engine: the isolated queen's pawn, the minority attack, hanging pawns, pawn chains, the hedgehog, opposite-side castling, knight against a bad bishop, outposts, open files, prophylaxis, calculation and the Lucena and Philidor positions.
 
 **Training plans.** Seven tracks (positional foundations, answering 1.e4, answering 1.d4, 1.e4 or 1.d4 for White, attack and calculation, endgames). The Today screen builds a daily session from your due reviews, unreviewed games, your current track and the weaknesses found in your games.
 
@@ -122,6 +146,12 @@ npx tsx scripts/validate-content.ts --engine --depth 13
 
 The last one replays every opening line and lesson position and flags any move that loses more than 0.9 pawns at the given depth.
 
+```bash
+npx tsx scripts/validate-endgames.ts 3000
+```
+
+This checks that every endgame drill and lesson position is legal and that the engine's verdict matches the goal (win, draw or mate), searching each position for the given number of milliseconds.
+
 ## How the coach works
 
 - `src/lib/engine/stockfish.ts` is a UCI driver for the single-threaded Stockfish WASM build in a Web Worker. It queues jobs, can cancel them, and caches results.
@@ -136,5 +166,7 @@ The last one replays every opening line and lesson position and flags any move t
 - Stockfish.js is GPLv3.
 - The cburnett chess pieces are GPLv2+.
 - Opening names come from the [lichess chess-openings](https://github.com/lichess-org/chess-openings) dataset (CC0).
+- Puzzles come from the [Lichess puzzle database](https://database.lichess.org/#puzzles) (CC0).
+- Opening explorer statistics come from the [Lichess broadcast database](https://database.lichess.org/#broadcasts) (CC0).
 
 Because it bundles GPL components, the app as distributed is GPL-3.0-or-later.

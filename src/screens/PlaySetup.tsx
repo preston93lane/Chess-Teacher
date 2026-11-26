@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Play } from 'lucide-react';
 import { BOTS } from '../lib/bots';
+import { STYLES } from '../lib/styles';
 import { Chess, START_FEN, uid, type Color } from '../lib/chess/core';
 import { useApp } from '../lib/store/app';
 import { useSession } from '../lib/gameSession';
@@ -24,6 +25,7 @@ export function PlaySetup() {
   const setGame = useSession((s) => s.setGame);
   const rating = estimateRating(games);
   const [botId, setBotId] = useState(q.get('bot') ?? suggestBot(rating).id);
+  const [styleId, setStyleId] = useState(q.get('style') ?? 'balanced');
   const [color, setColor] = useState<'w' | 'b' | 'random'>((q.get('side') as Color) ?? 'w');
   const [mode, setMode] = useState<StartMode>(q.get('opening') ? 'opening' : q.get('fen') ? 'fen' : 'standard');
   const [openingId, setOpeningId] = useState(q.get('opening') ?? OPENINGS[0].id);
@@ -68,6 +70,7 @@ export function PlaySetup() {
         title: mode === 'opening' ? opening.name : undefined,
         timeControl: preset.tc,
         block: q.get('block') ?? undefined,
+        styleId: styleId === 'balanced' ? undefined : styleId,
       },
       clock: preset.tc ? { w: preset.tc.initial, b: preset.tc.initial, running: null, since: null } : undefined,
       sans: [...presetSans],
@@ -112,6 +115,20 @@ export function PlaySetup() {
           ))}
         </div>
         <p className="muted small mt8">Your estimated strength against the bots: {rating}. Strength labels are approximate.</p>
+      </Section>
+
+      <Section title="Playing style">
+        <div className="style-grid" role="radiogroup" aria-label="Playing style">
+          {STYLES.map((st) => (
+            <button key={st.id} role="radio" aria-checked={st.id === styleId} className={`style-chip${st.id === styleId ? ' is-on' : ''}`} onClick={() => setStyleId(st.id)}>
+              <span className="style-name">{st.name}</span>
+            </button>
+          ))}
+        </div>
+        <p className="muted small mt8">
+          {STYLES.find((st) => st.id === styleId)?.blurb}
+          {styleId !== 'balanced' && mode === 'opening' ? ' (In opening practice the bot follows the chosen opening first.)' : ''}
+        </p>
       </Section>
 
       <Section title="Time control">

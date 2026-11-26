@@ -17,6 +17,8 @@ export interface GameConfig {
   timeControl?: TimeControl | null;
   /** Training-program block this game belongs to. */
   block?: string;
+  /** Bot personality (see lib/styles). */
+  styleId?: string;
 }
 
 export interface LiveGame {
@@ -33,6 +35,8 @@ export interface LiveGame {
   createdAt: number;
   saved?: boolean;
   clock?: ClockState;
+  /** Mover's remaining time (ms) after each ply, keyed by ply index. */
+  clockLog?: Record<number, number>;
 }
 
 interface SessionState {

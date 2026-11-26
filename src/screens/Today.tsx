@@ -154,7 +154,7 @@ export function Today() {
         )}
       </Section>
 
-      <Section title="Progress">
+      <Section title="Progress" action={<button className="link-btn" onClick={() => navigate('/insights')}>All insights <ArrowRight size={14} /></button>}>
         <div className="progress-grid">
           <div className="panel panel-tight">
             <h4>Accuracy, last {reviewed.length || 0} reviewed games</h4>

@@ -308,12 +308,18 @@ export function PuzzleDrill({ card, onDone }: { card: PuzzleCard; onDone: (r: { 
       </div>
       <div className="side-col">
         <div className="drill-head">
-          <p className="drill-mode">From your games · {side === 'w' ? 'White' : 'Black'} to move</p>
+          <p className="drill-mode">{card.id.startsWith('pz:lichess:') ? 'Puzzle review' : 'From your games'} · {side === 'w' ? 'White' : 'Black'} to move</p>
           <h2>{card.title}</h2>
         </div>
         <div className="panel panel-tight">
           <p className="drill-prompt">
-            In the game you played <strong>{playedSan}</strong>. Find a stronger move.
+            {card.id.startsWith('pz:lichess:') ? (
+              <>You missed this puzzle{playedSan ? <> (you tried <strong>{playedSan}</strong>)</> : null}. Find the winning move.</>
+            ) : playedSan ? (
+              <>In the game you played <strong>{playedSan}</strong>. Find a stronger move.</>
+            ) : (
+              'Find the best move.'
+            )}
           </p>
           {card.note && <p className="muted small mt8">{card.note}</p>}
         </div>

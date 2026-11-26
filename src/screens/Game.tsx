@@ -34,6 +34,34 @@ import { Button, Empty, Header, IconButton, Sheet, Spinner, Toggle } from '../co
 import { InsightsPanel } from '../components/Insights';
 import { MoveBreakdown } from '../components/MoveBreakdown';
 import { toast } from '../components/Toast';
+import {
+  botThinkTime,
+  formatClock,
+  hasMatingMaterial,
+  remainingNow,
+  tcLabel,
+  timePressure,
+  type ClockState,
+  type TimeControl,
+} from '../lib/clock';
+import type { Color } from '../lib/chess/core';
+
+function chargeMove(clock: ClockState, mover: Color, tc: TimeControl, now = Date.now()): ClockState {
+  const elapsed = clock.running === mover && clock.since ? now - clock.since : 0;
+  const base = clock.running === mover ? clock[mover] - elapsed : clock[mover];
+  return { ...clock, [mover]: Math.max(0, base) + tc.increment, running: null, since: null };
+}
+function pauseClock(clock: ClockState, now = Date.now()): ClockState {
+  if (!clock.running || !clock.since) return clock;
+  return { ...clock, [clock.running]: clock[clock.running] - (now - clock.since), since: null };
+}
+function stopClock(clock: ClockState, now = Date.now()): ClockState {
+  return { ...pauseClock(clock, now), running: null };
+}
+
+function ClockFace({ ms, active, low }: { ms: number; active: boolean; low: boolean }) {
+  return <span className={`clock${active ? ' is-active' : ''}${low ? ' is-low' : ''}`}>{formatClock(ms)}</span>;
+}
 
 function replay(startFen: string, sans: string[]) {
   const c = new Chess(startFen);
@@ -105,6 +133,17 @@ function LiveGameView({ game }: { game: LiveGame }) {
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [breakdown, setBreakdown] = useState<{ fenBefore: string; uci: string } | null>(null);
   const [deepInsight, setDeepInsight] = useState(false);
+  const tc = config.timeControl ?? null;
+  const [now, setNow] = useState(Date.now());
+  const movesMade = game.sans.length - config.presetSans.length;
+  const clockLive = !!tc && movesMade >= 2;
+  const patchClock = useCallback(
+    (fn: (c: ClockState) => ClockState) => {
+      const g = useSession.getState().game;
+      if (g?.clock) patch({ clock: fn(g.clock) });
+    },
+    [patch],
+  );
 
   useEffect(() => setDeepInsight(false), [fen]);
 
@@ -120,7 +159,10 @@ function LiveGameView({ game }: { game: LiveGame }) {
 
   const openBreakdown = (ply: number) => {
     const m = applySan(fens[ply], game.sans[ply]);
-    if (m) setBreakdown({ fenBefore: fens[ply], uci: uciOf(m.move) });
+    if (!m) return;
+    const g = useSession.getState().game;
+    if (g?.clock) patch({ clock: pauseClock(g.clock) });
+    setBreakdown({ fenBefore: fens[ply], uci: uciOf(m.move) });
   };
 
   // ---- prefetch analysis on the user's turn (for hints and move review) ----
@@ -140,7 +182,8 @@ function LiveGameView({ game }: { game: LiveGame }) {
   // ---- end of game ----
   const finish = useCallback(
     async (result: string, reason: string, g: LiveGame) => {
-      patch({ status: 'ended', result, endReason: reason });
+      const ck = useSession.getState().game?.clock;
+      patch({ status: 'ended', result, endReason: reason, ...(ck ? { clock: stopClock(ck) } : {}) });
       playSound('end');
       setEndOpen(true);
       if (g.saved) return;
@@ -159,6 +202,7 @@ function LiveGameView({ game }: { game: LiveGame }) {
         botId: g.config.botId,
         plies: g.sans.length,
         date: new Date(g.createdAt).toISOString().slice(0, 10),
+        timeControl: g.config.timeControl ? tcLabel(g.config.timeControl) : undefined,
       };
       const comments: Record<number, string> = {};
       Object.values(g.reviews).forEach((r) => (comments[r.ply] = `${r.headline}`));
@@ -171,6 +215,7 @@ function LiveGameView({ game }: { game: LiveGame }) {
           Black: meta.black,
           Result: result,
           Termination: reason,
+          ...(g.config.timeControl ? { TimeControl: `${g.config.timeControl.initial / 1000}+${g.config.timeControl.increment / 1000}` } : {}),
         },
         startFen: g.config.startFen,
         sans: g.sans,
@@ -190,6 +235,53 @@ function LiveGameView({ game }: { game: LiveGame }) {
     if (over) void finish(over.result, over.reason, game);
   }, [fen, game, finish]);
 
+  // ---- clocks ----
+  // Start the user's clock when it is their turn (after both sides' first moves).
+  useEffect(() => {
+    if (!tc || !clockLive || game.status !== 'playing' || !userTurn || reviewing || breakdown) return;
+    const ck = useSession.getState().game?.clock;
+    if (ck && ck.running !== config.userColor) patchClock((c) => ({ ...c, running: config.userColor, since: Date.now() }));
+  }, [tc, clockLive, game.status, userTurn, reviewing, breakdown, config.userColor, patchClock, fen]);
+
+  // Tick, and detect a flag.
+  useEffect(() => {
+    if (!tc || game.status !== 'playing' || !game.clock?.running || !game.clock.since) return;
+    const id = window.setInterval(() => {
+      const t = Date.now();
+      setNow(t);
+      const g = useSession.getState().game;
+      if (!g?.clock?.running || !g.clock.since || g.status !== 'playing') return;
+      const side = g.clock.running;
+      if (remainingNow(g.clock, side, t) <= 0) {
+        const fenNow = replay(g.config.startFen, g.sans).fens.slice(-1)[0];
+        const winner = side === 'w' ? 'b' : 'w';
+        const draw = !hasMatingMaterial(fenNow, winner);
+        void finish(
+          draw ? '1/2-1/2' : winner === 'w' ? '1-0' : '0-1',
+          draw ? 'Time out vs insufficient material' : side === g.config.userColor ? 'You ran out of time' : `${bot.name} ran out of time`,
+          { ...g, clock: { ...g.clock, [side]: 0 } },
+        );
+      }
+    }, 100);
+    return () => window.clearInterval(id);
+  }, [tc, game.status, game.clock?.running, game.clock?.since, finish, bot.name]);
+
+  // Pause while the app is hidden or the screen is left; resume on return.
+  useEffect(() => {
+    if (!tc) return;
+    const resume = () => {
+      const g = useSession.getState().game;
+      if (g?.clock?.running && !g.clock.since && g.status === 'playing' && !breakdown) patchClock((c) => ({ ...c, since: Date.now() }));
+    };
+    const onVis = () => (document.hidden ? patchClock((c) => pauseClock(c)) : resume());
+    resume();
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      document.removeEventListener('visibilitychange', onVis);
+      patchClock((c) => pauseClock(c));
+    };
+  }, [tc, patchClock, breakdown]);
+
   // ---- bot moves ----
   useEffect(() => {
     if (game.status !== 'playing' || turn === config.userColor || reviewing) return;
@@ -199,22 +291,33 @@ function LiveGameView({ game }: { game: LiveGame }) {
     setThinking(true);
     const plyAtStart = game.sans.length;
     (async () => {
+      const t0 = Date.now();
+      const botColor: Color = config.userColor === 'w' ? 'b' : 'w';
+      const startState = useSession.getState().game;
+      const timed = !!tc && startState?.clock && game.sans.length - config.presetSans.length >= 1;
+      if (timed && game.sans.length - config.presetSans.length >= 2) patchClock((c) => ({ ...c, running: botColor, since: t0 }));
       let uci: string | null = null;
-      if (opening) {
-        const book = openingBookMoves(opening, fen);
-        const pick = pickWeighted(book);
-        if (pick) {
-          uci = pick.uci;
-          await new Promise((r) => setTimeout(r, 500));
-        }
-      }
-      if (!uci) uci = await botMove(fen, bot);
+      const book = opening ? openingBookMoves(opening, fen) : [];
+      const pick = pickWeighted(book);
+      const remaining = startState?.clock ? remainingNow(startState.clock, botColor) : 0;
+      const budget = tc
+        ? botThinkTime({ fen, bot, tc, remaining, lastMoveSan: game.sans[game.sans.length - 1], lastMoveTo: moves[moves.length - 1]?.to, isBookMove: !!pick })
+        : 300 + Math.random() * 700;
+      const pressure = tc ? timePressure(remaining, tc) : 0;
+      if (pick) uci = pick.uci;
+      else uci = await botMove(fen, bot, { budgetMs: budget, pressure });
+      // Take a human amount of time — never instant, never longer than planned.
+      const wait = budget - (Date.now() - t0);
+      if (wait > 0) await new Promise((r) => setTimeout(r, wait));
       const current = useSession.getState().game;
       if (!uci || !current || current.sans.length !== plyAtStart || current.status !== 'playing') return;
       const c = new Chess(fen);
       const m = c.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: (uci[4] as PieceSymbol) || undefined });
       soundForSan(m.san);
-      patch({ sans: [...current.sans, m.san] });
+      patch({
+        sans: [...current.sans, m.san],
+        ...(tc && current.clock ? { clock: chargeMove(current.clock, botColor, tc) } : {}),
+      });
     })()
       .catch((e) => {
         if (!(e instanceof CancelledError)) toast('The engine had a problem. Try taking back a move.');
@@ -223,7 +326,7 @@ function LiveGameView({ game }: { game: LiveGame }) {
         setThinking(false);
         thinkingFor.current = null;
       });
-  }, [fen, turn, config.userColor, game.status, reviewing, opening, bot, game.sans.length, patch]);
+  }, [fen, turn, config.userColor, game.status, reviewing, opening, bot, game.sans.length, patch, tc, patchClock, config.presetSans.length, moves]);
 
   // ---- user moves ----
   const onMove = useCallback(
@@ -260,7 +363,12 @@ function LiveGameView({ game }: { game: LiveGame }) {
       }
       const doReview = config.coachLive;
       if (doReview) setReviewing(true);
-      patch({ sans: [...game.sans, m.san], bookNotes: bookNote ? { ...game.bookNotes, [ply]: bookNote } : game.bookNotes });
+      const ckNow = useSession.getState().game?.clock;
+      patch({
+        sans: [...game.sans, m.san],
+        bookNotes: bookNote ? { ...game.bookNotes, [ply]: bookNote } : game.bookNotes,
+        ...(tc && ckNow ? { clock: chargeMove(ckNow, config.userColor, tc) } : {}),
+      });
       if (!doReview) return;
       try {
         const before = analysis && analysis.fen === fenBefore ? analysis : await engine.analyze(fenBefore, { depth, multipv: 3 });
@@ -297,7 +405,7 @@ function LiveGameView({ game }: { game: LiveGame }) {
         setReviewing(false);
       }
     },
-    [userTurn, viewPly, fen, game, opening, config.coachLive, patch, analysis, depth, moves],
+    [userTurn, viewPly, fen, game, opening, config.coachLive, patch, analysis, depth, moves, tc, config.userColor],
   );
 
   const takeBack = () => {
@@ -314,7 +422,16 @@ function LiveGameView({ game }: { game: LiveGame }) {
     if (target < config.presetSans.length || colorAt(target) !== config.userColor) return;
     const reviews = { ...game.reviews };
     for (const k of Object.keys(reviews)) if (+k >= target) delete reviews[+k];
-    patch({ sans: game.sans.slice(0, target), reviews, takebacks: game.takebacks + 1, status: 'playing', result: undefined, endReason: undefined });
+    const ck = useSession.getState().game?.clock;
+    patch({
+      sans: game.sans.slice(0, target),
+      reviews,
+      takebacks: game.takebacks + 1,
+      status: 'playing',
+      result: undefined,
+      endReason: undefined,
+      ...(ck ? { clock: stopClock(ck) } : {}),
+    });
     setViewPly(null);
     setArrows([]);
     setMarks([]);
@@ -350,6 +467,7 @@ function LiveGameView({ game }: { game: LiveGame }) {
       takebacks: 0,
       createdAt: Date.now(),
       saved: false,
+      clock: config.timeControl ? { w: config.timeControl.initial, b: config.timeControl.initial, running: null, since: null } : undefined,
     });
     setOrientation(userColor);
     setViewPly(null);
@@ -384,14 +502,20 @@ function LiveGameView({ game }: { game: LiveGame }) {
         : null;
   const userLabel = 'You';
   const top = orientation === 'w' ? 'b' : 'w';
+  const clockFor = (c: 'w' | 'b') => {
+    if (!tc || !game.clock) return null;
+    const ms = remainingNow(game.clock, c, now);
+    return <ClockFace ms={ms} active={game.clock.running === c && !!game.clock.since && game.status === 'playing'} low={ms < Math.min(20_000, tc.initial * 0.15)} />;
+  };
   const tag = (c: 'w' | 'b') =>
     c === config.userColor ? (
-      <div className="player-tag"><span className={`pill-color pill-${c}`} />{userLabel}</div>
+      <div className="player-tag"><span className={`pill-color pill-${c}`} />{userLabel}{clockFor(c)}</div>
     ) : (
       <div className="player-tag">
         <span className={`pill-color pill-${c}`} />
         {bot.name} <span className="muted num">{bot.elo}</span>
         {thinking && <span className="thinking"><Spinner /></span>}
+        {clockFor(c)}
       </div>
     );
 
@@ -405,7 +529,11 @@ function LiveGameView({ game }: { game: LiveGame }) {
             <SlidersHorizontal size={20} />
           </IconButton>
         }
-        sub={game.status === 'ended' ? `${game.result} · ${game.endReason}` : config.coachLive ? 'Coach is watching every move' : 'Coach off — review after the game'}
+        sub={
+          game.status === 'ended'
+            ? `${game.result} · ${game.endReason}`
+            : `${tc ? `${tcLabel(tc)} · ` : ''}${config.coachLive ? 'Coach is watching every move' : 'Coach off — review after the game'}`
+        }
       />
       <div className="board-screen">
         <div className="board-col">

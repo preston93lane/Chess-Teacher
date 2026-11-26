@@ -10,6 +10,7 @@ import { Button, Header, Section, Segmented, Toggle } from '../components/ui';
 import { OPENINGS } from '../data/openings';
 import { allLines } from '../lib/openings/book';
 import { engine } from '../lib/engine/stockfish';
+import { TIME_PRESETS } from '../lib/clock';
 
 type StartMode = 'standard' | 'opening' | 'fen';
 
@@ -30,6 +31,8 @@ export function PlaySetup() {
   const [skipBook, setSkipBook] = useState(false);
   const [fen, setFen] = useState(q.get('fen') ?? '');
   const [coachLive, setCoachLive] = useState(settings.coachLive);
+  const [tcId, setTcId] = useState(q.get('tc') ?? settings.timeControl ?? 'none');
+  const preset = TIME_PRESETS.find((t) => t.id === tcId) ?? TIME_PRESETS[0];
   const opening = OPENINGS.find((o) => o.id === openingId)!;
   const fenError = useMemo(() => {
     if (mode !== 'fen' || !fen.trim()) return null;
@@ -52,7 +55,7 @@ export function PlaySetup() {
       presetSans = line.sans;
     }
     engine.newGame();
-    updateSettings({ coachLive });
+    updateSettings({ coachLive, timeControl: tcId });
     setGame({
       id: uid('g'),
       config: {
@@ -63,7 +66,9 @@ export function PlaySetup() {
         openingId: mode === 'opening' ? openingId : undefined,
         coachLive,
         title: mode === 'opening' ? opening.name : undefined,
+        timeControl: preset.tc,
       },
+      clock: preset.tc ? { w: preset.tc.initial, b: preset.tc.initial, running: null, since: null } : undefined,
       sans: [...presetSans],
       reviews: {},
       bookNotes: {},
@@ -106,6 +111,22 @@ export function PlaySetup() {
           ))}
         </div>
         <p className="muted small mt8">Your estimated strength against the bots: {rating}. Strength labels are approximate.</p>
+      </Section>
+
+      <Section title="Time control">
+        <div className="tc-grid" role="radiogroup" aria-label="Time control">
+          {TIME_PRESETS.map((t) => (
+            <button key={t.id} role="radio" aria-checked={t.id === tcId} className={`tc-chip${t.id === tcId ? ' is-on' : ''}`} onClick={() => setTcId(t.id)}>
+              <span className="tc-label num">{t.label}</span>
+              <span className="tc-kind">{t.kind}</span>
+            </button>
+          ))}
+        </div>
+        {preset.tc && (
+          <p className="muted small mt8">
+            The bot manages its clock like a person: quick in known positions and obvious recaptures, slower when it’s sharp, faster the stronger it is — and shakier when it’s short of time. The live coach’s review time doesn’t count against either clock.
+          </p>
+        )}
       </Section>
 
       <Section title="You play">

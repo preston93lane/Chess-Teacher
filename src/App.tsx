@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
-import { Sunrise, Swords, BookOpen, Target, History, Settings as SettingsIcon } from 'lucide-react';
+import { Sunrise, Swords, BookOpen, Target, History, Puzzle, Settings as SettingsIcon } from 'lucide-react';
 import { useApp, dueCards } from './lib/store/app';
 import { match, navigate, useRoute } from './lib/router';
 import { Toaster } from './components/Toast';
@@ -18,12 +18,17 @@ import { AnalysisScreen } from './screens/Analysis';
 import { ImportScreen } from './screens/Import';
 import { SettingsScreen } from './screens/Settings';
 import { Spinner } from './components/ui';
+import { PuzzlesHub } from './screens/Puzzles';
+import { PuzzleSession } from './screens/PuzzleSession';
+import { PuzzleRush } from './screens/PuzzleRush';
+import { ClassicsList, ClassicScreen } from './screens/Classics';
 
 const TABS = [
   { path: '/', label: 'Today', icon: Sunrise, match: (p: string) => p === '/' },
   { path: '/play', label: 'Play', icon: Swords, match: (p: string) => p.startsWith('/play') },
+  { path: '/puzzles', label: 'Puzzles', icon: Puzzle, match: (p: string) => p.startsWith('/puzzles') },
   { path: '/openings', label: 'Openings', icon: BookOpen, match: (p: string) => p.startsWith('/openings') },
-  { path: '/train', label: 'Train', icon: Target, match: (p: string) => p.startsWith('/train') },
+  { path: '/train', label: 'Train', icon: Target, match: (p: string) => p.startsWith('/train') || p.startsWith('/classics') },
   { path: '/games', label: 'Games', icon: History, match: (p: string) => p.startsWith('/games') || p.startsWith('/analysis') || p.startsWith('/import') },
 ];
 
@@ -33,10 +38,15 @@ function route(path: string): ReactNode {
   if (p === '/' || p === '') return <Today />;
   if (p === '/play') return <PlaySetup />;
   if (p === '/play/game') return <GameScreen />;
+  if (p === '/puzzles') return <PuzzlesHub />;
+  if (p === '/puzzles/play') return <PuzzleSession key={path} />;
+  if (p === '/puzzles/rush') return <PuzzleRush key={path} />;
   if (p === '/openings') return <Openings />;
   if ((m = match('/openings/:id', p))) return <OpeningDetail id={m.id} />;
   if ((m = match("/openings/:id/:mode/:line", p))) return <LineTrainer key={p} openingId={m.id} lineId={m.line} mode={m.mode as 'learn' | 'drill'} />;
   if (p === '/train') return <Train />;
+  if (p === '/classics') return <ClassicsList />;
+  if ((m = match('/classics/:id', p))) return <ClassicScreen key={p} id={m.id} />;
   if (p === '/train/review') return <ReviewSession />;
   if (p === '/train/plan') return <PlanScreen />;
   if ((m = match('/train/lesson/:id', p))) return <LessonScreen id={m.id} />;

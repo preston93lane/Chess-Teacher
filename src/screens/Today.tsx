@@ -18,8 +18,16 @@ const KIND_LABEL: Record<string, string> = {
 export function Today() {
   const s = useApp();
   const steps = useMemo(
-    () => dailySession({ cards: s.cards, games: s.games, plan: s.plan, lessons: s.lessons, repertoire: s.repertoire }),
-    [s.cards, s.games, s.plan, s.lessons, s.repertoire],
+    () =>
+      dailySession({
+        cards: s.cards,
+        games: s.games,
+        plan: s.plan,
+        lessons: s.lessons,
+        repertoire: s.repertoire,
+        dailyPuzzleDone: s.puzzles.dailyDone === today(),
+      }),
+    [s.cards, s.games, s.plan, s.lessons, s.repertoire, s.puzzles.dailyDone],
   );
   const days = streak(s.activity);
   const due = dueCards(s.cards).length;
@@ -83,6 +91,10 @@ export function Today() {
             <div className="stat">
               <span className="stat-value num">{rating}</span>
               <span className="stat-label">est. rating vs bots</span>
+            </div>
+            <div className="stat">
+              <span className="stat-value num">{s.puzzles.rating}</span>
+              <span className="stat-label">puzzle rating</span>
             </div>
           </div>
           {todayAct && (

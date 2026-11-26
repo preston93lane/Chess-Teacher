@@ -17,6 +17,8 @@ export interface Settings {
   coachTalk: boolean;
   /** Evaluation bar and numeric evaluations. */
   showEval: boolean;
+  /** Last chosen time-control preset id. */
+  timeControl?: string;
   analysisDepth: number;
   autoQueen: boolean;
   /** Usernames used to work out which side you played in imported games. */
@@ -89,6 +91,19 @@ export interface LessonProgress {
   updatedAt: number;
 }
 
+export interface PuzzleStats {
+  rating: number;
+  attempts: number;
+  solved: number;
+  failed: number;
+  history: { id: string; ok: boolean; rating: number; after: number; t: number }[];
+  seen: string[];
+  rush: Record<string, number>;
+  dailyDone?: string;
+}
+
+export const defaultPuzzleStats: PuzzleStats = { rating: 1500, attempts: 0, solved: 0, failed: 0, history: [], seen: [], rush: {} };
+
 export interface PlanState {
   trackId: string;
   startedAt: number;
@@ -104,6 +119,11 @@ interface AppState {
   repertoire: Record<string, { side: Color; addedAt: number }>;
   activity: Record<string, DayActivity>;
   plan: PlanState | null;
+  puzzles: PuzzleStats;
+  classics: Record<string, { best: number; total: number }>;
+  recordClassic: (id: string, found: number, total: number) => void;
+  recordPuzzle: (r: { id: string; puzzleRating: number; ok: boolean; rated: boolean; newRating?: number; daily?: boolean }) => void;
+  recordRush: (mode: string, score: number) => void;
   updateSettings: (s: Partial<Settings>) => void;
   addGame: (g: GameMeta) => void;
   updateGame: (id: string, patch: Partial<GameMeta>) => void;
@@ -162,6 +182,35 @@ export const useApp = create<AppState>()(
       repertoire: {},
       activity: {},
       plan: null,
+      puzzles: defaultPuzzleStats,
+      classics: {},
+      recordClassic: (id, found, total) => {
+        const cur = get().classics[id];
+        if (!cur || found > cur.best) set({ classics: { ...get().classics, [id]: { best: found, total } } });
+        get().logActivity('lessons');
+      },
+      recordPuzzle: ({ id, puzzleRating, ok, rated, newRating, daily }) => {
+        const ps = get().puzzles;
+        const rating = rated && newRating !== undefined ? newRating : ps.rating;
+        set({
+          puzzles: {
+            ...ps,
+            rating,
+            attempts: ps.attempts + (rated ? 1 : 0),
+            solved: ps.solved + (ok ? 1 : 0),
+            failed: ps.failed + (ok ? 0 : 1),
+            history: [{ id, ok, rating: puzzleRating, after: rating, t: Date.now() }, ...ps.history].slice(0, 300),
+            seen: [id, ...ps.seen.filter((x) => x !== id)].slice(0, 4000),
+            dailyDone: daily ? today() : ps.dailyDone,
+          },
+        });
+        get().logActivity('puzzles');
+      },
+      recordRush: (mode, score) => {
+        const ps = get().puzzles;
+        if ((ps.rush[mode] ?? 0) >= score) return;
+        set({ puzzles: { ...ps, rush: { ...ps.rush, [mode]: score } } });
+      },
       updateSettings: (s) => set({ settings: { ...get().settings, ...s } }),
       addGame: (g) => set({ games: [g, ...get().games.filter((x) => x.id !== g.id)] }),
       updateGame: (id, patch) => set({ games: get().games.map((g) => (g.id === id ? { ...g, ...patch } : g)) }),
@@ -233,9 +282,11 @@ export const useApp = create<AppState>()(
           repertoire: data.repertoire ?? {},
           activity: data.activity ?? {},
           plan: data.plan ?? null,
+          puzzles: { ...defaultPuzzleStats, ...(data.puzzles ?? {}) },
+          classics: data.classics ?? {},
         }),
       resetAll: () =>
-        set({ settings: defaultSettings, games: [], cards: {}, lessons: {}, repertoire: {}, activity: {}, plan: null }),
+        set({ settings: defaultSettings, games: [], cards: {}, lessons: {}, repertoire: {}, activity: {}, plan: null, puzzles: defaultPuzzleStats, classics: {} }),
     }),
     {
       name: 'outpost-state-v1',
@@ -248,10 +299,17 @@ export const useApp = create<AppState>()(
         repertoire: s.repertoire,
         activity: s.activity,
         plan: s.plan,
+        puzzles: s.puzzles,
+        classics: s.classics,
       }),
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<AppState>;
-        return { ...current, ...p, settings: { ...defaultSettings, ...(p.settings ?? {}) } };
+        return {
+          ...current,
+          ...p,
+          settings: { ...defaultSettings, ...(p.settings ?? {}) },
+          puzzles: { ...defaultPuzzleStats, ...(p.puzzles ?? {}) },
+        };
       },
       onRehydrateStorage: () => () => {
         useApp.setState({ hydrated: true });

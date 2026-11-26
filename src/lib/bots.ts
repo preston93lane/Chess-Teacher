@@ -37,27 +37,38 @@ export function getBot(id: string) {
 }
 
 /** Choose the bot’s move for a position. */
-export async function botMove(fen: string, bot: Bot): Promise<string | null> {
+export async function botMove(
+  fen: string,
+  bot: Bot,
+  opts: { budgetMs?: number; pressure?: number } = {},
+): Promise<string | null> {
   const chess = new Chess(fen);
   const legal = chess.moves({ verbose: true });
   if (!legal.length) return null;
   const p = bot.play;
-  if (p.blunder && Math.random() < p.blunder) {
-    // Careless: a random move, but avoid instantly hanging the queen most of the time.
+  const pressure = opts.pressure ?? 0;
+  if (p.blunder && Math.random() < p.blunder + pressure * 0.03) {
     const pick = legal[Math.floor(Math.random() * legal.length)];
     return uciOf(pick);
   }
-  const res = await engine.play(fen, {
-    skill: p.skill,
-    elo: p.elo,
-    depth: p.depth,
-    movetime: p.movetime,
-    multipv: p.multipv,
-  });
+  const multipv = Math.max(p.multipv ?? 1, pressure > 0 ? 3 : 1);
+  // Search time never exceeds the human-like budget for this move.
+  const movetime = p.movetime ? Math.min(p.movetime, Math.max(120, (opts.budgetMs ?? p.movetime) * 0.75)) : undefined;
+  const res = await engine.play(fen, { skill: p.skill, elo: p.elo, depth: p.depth, movetime, multipv });
   if (p.noise && res.lines.length > 1 && Math.random() < p.noise) {
     const alts: EngineLine[] = res.lines.slice(1);
     const pick = alts[Math.floor(Math.random() * alts.length)];
     if (pick?.pv[0]) return pick.pv[0];
+  }
+  // Time-pressure slips: a slightly worse move than this bot would normally play.
+  if (pressure > 0 && res.lines.length > 1 && Math.random() < 0.12 + 0.45 * pressure) {
+    const sign = fen.split(' ')[1] === 'w' ? 1 : -1;
+    const cp = (l: EngineLine) => (l.mate !== undefined ? (l.mate > 0 ? 10000 : -10000) : l.cp ?? 0) * sign;
+    const best = cp(res.lines[0]);
+    const margin = 60 + 160 * pressure;
+    const near = res.lines.slice(1).filter((l) => best - cp(l) <= margin && l.pv[0]);
+    if (near.length) return near[Math.floor(Math.random() * near.length)].pv[0];
+    if (Math.random() < 0.12 * pressure && res.lines[1]?.pv[0]) return res.lines[1].pv[0];
   }
   return res.bestmove ?? res.lines[0]?.pv[0] ?? uciOf(legal[0]);
 }

@@ -6,6 +6,7 @@ import { getTrack } from '../lib/plan';
 import { dueLabel } from '../lib/srs/scheduler';
 import { Button, Header, Section } from '../components/ui';
 import { MiniBoard } from '../components/MiniBoard';
+import { CLASSICS } from '../data/classics';
 import type { PuzzleCard } from '../lib/store/app';
 import type { Track } from '../lib/lessons/types';
 
@@ -64,6 +65,19 @@ export function Train() {
         ) : (
           <p className="muted">Follow a structured track — a repertoire, positional foundations or endgames — and your daily session will be built from it.</p>
         )}
+      </Section>
+
+      <Section title="Classic games" action={<button className="link-btn" onClick={() => navigate('/classics')}>All {CLASSICS.length} games <ArrowRight size={14} /></button>}>
+        <p className="muted mb8">Tactics and strategy through the immortal games: replay them with commentary, or play the winner’s side and find the key moves.</p>
+        <div className="classic-strip">
+          {CLASSICS.slice(0, 6).map((g) => (
+            <button key={g.id} className="classic-mini" onClick={() => navigate(`/classics/${g.id}`)}>
+              <span className="classic-year num">{g.year}</span>
+              <span className="classic-title">{g.title}</span>
+              <span className="muted small">{g.white.split(' ').slice(-1)[0]} – {g.black.split(' ').slice(-1)[0]}</span>
+            </button>
+          ))}
+        </div>
       </Section>
 
       <Section title="Lessons">

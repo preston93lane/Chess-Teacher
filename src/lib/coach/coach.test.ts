@@ -150,3 +150,47 @@ describe('material loss wording', () => {
     expect(r.headline).toMatch(/Hangs the bishop/);
   });
 });
+
+import { botThinkTime, timePressure, hasMatingMaterial } from '../clock';
+import { BOTS } from '../bots';
+import { updateRating } from '../puzzles';
+
+describe('human-like clock use', () => {
+  const tc = { initial: 180_000, increment: 2_000 };
+  const middlegame = play('1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.O-O Be7 6.Re1 b5 7.Bb3 d6 8.c3 O-O 9.h3 Nb8 10.d4 Nbd7').fen();
+  const avg = (botId: string) => {
+    const bot = BOTS.find((b) => b.id === botId)!;
+    let s = 0;
+    for (let i = 0; i < 300; i++) s += botThinkTime({ fen: middlegame, bot, tc, remaining: 150_000 });
+    return s / 300;
+  };
+  it('stronger bots think faster on average', () => {
+    expect(avg('l9')).toBeLessThan(avg('l2'));
+  });
+  it('is never instant and never reckless', () => {
+    for (const b of BOTS) {
+      for (let i = 0; i < 50; i++) {
+        const t = botThinkTime({ fen: middlegame, bot: b, tc, remaining: 150_000 });
+        expect(t).toBeGreaterThanOrEqual(200);
+        expect(t).toBeLessThan(150_000 * 0.2);
+      }
+    }
+  });
+  it('plays forced moves quickly', () => {
+    const fen = '7k/8/8/8/8/8/6q1/7K w - - 0 1'; // only Kxg2
+    expect(botThinkTime({ fen, bot: BOTS[5], tc, remaining: 150_000 })).toBeLessThan(800);
+  });
+  it('speeds up and feels pressure when short of time', () => {
+    expect(timePressure(5_000, tc)).toBeGreaterThan(0.7);
+    expect(timePressure(150_000, tc)).toBe(0);
+    for (let i = 0; i < 50; i++) expect(botThinkTime({ fen: middlegame, bot: BOTS[5], tc, remaining: 5_000 })).toBeLessThan(1_500);
+  });
+  it('knows when a flag is a draw', () => {
+    expect(hasMatingMaterial('8/8/8/4k3/8/8/8/4KN2 w - - 0 1', 'w')).toBe(false);
+    expect(hasMatingMaterial('8/8/8/4k3/8/8/8/4KR2 w - - 0 1', 'w')).toBe(true);
+  });
+  it('puzzle rating moves in the right direction', () => {
+    expect(updateRating(1500, 1500, true, 0)).toBeGreaterThan(1500);
+    expect(updateRating(1500, 1500, false, 0)).toBeLessThan(1500);
+  });
+});

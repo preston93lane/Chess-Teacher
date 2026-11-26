@@ -3,6 +3,7 @@ import { persist, createJSONStorage, type StateStorage } from 'zustand/middlewar
 import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval';
 import type { Color } from './chess/core';
 import type { MoveReview } from './coach/explain';
+import type { ClockState, TimeControl } from './clock';
 
 export interface GameConfig {
   botId: string;
@@ -13,6 +14,7 @@ export interface GameConfig {
   openingId?: string;
   coachLive: boolean;
   title?: string;
+  timeControl?: TimeControl | null;
 }
 
 export interface LiveGame {
@@ -28,6 +30,7 @@ export interface LiveGame {
   takebacks: number;
   createdAt: number;
   saved?: boolean;
+  clock?: ClockState;
 }
 
 interface SessionState {

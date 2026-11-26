@@ -10,8 +10,10 @@ import { STRUCTURES } from '../lib/coach/structure';
 import { getLesson } from '../data/lessons';
 import { formatLine, START_FEN, type Color } from '../lib/chess/core';
 import { parseMovetext } from '../lib/chess/pgn';
+import { OPENING_HISTORY } from '../data/openingHistory';
+import { getClassic } from '../data/classics';
 
-type Tab = 'lines' | 'ideas' | 'plans' | 'traps';
+type Tab = 'lines' | 'ideas' | 'plans' | 'traps' | 'history';
 
 export function OpeningDetail({ id }: { id: string }) {
   const opening = getOpening(id);
@@ -70,9 +72,9 @@ export function OpeningDetail({ id }: { id: string }) {
       </div>
 
       <div className="tabs mt24" role="tablist">
-        {(['lines', 'ideas', 'plans', 'traps'] as Tab[]).map((t) => (
+        {(['lines', 'ideas', 'plans', 'history', 'traps'] as Tab[]).filter((t) => t !== 'history' || OPENING_HISTORY[id]).map((t) => (
           <button key={t} role="tab" aria-selected={tab === t} className={`tab${tab === t ? ' is-on' : ''}`} onClick={() => setTab(t)}>
-            {t === 'lines' ? `Lines (${opening.lines.length})` : t === 'ideas' ? 'Key ideas' : t === 'plans' ? 'Middlegame plans' : `Traps (${opening.traps.length})`}
+            {t === 'lines' ? `Lines (${opening.lines.length})` : t === 'ideas' ? 'Key ideas' : t === 'plans' ? 'Middlegame plans' : t === 'history' ? 'History' : `Traps (${opening.traps.length})`}
           </button>
         ))}
       </div>
@@ -170,6 +172,51 @@ export function OpeningDetail({ id }: { id: string }) {
               </div>
             </div>
           ) : null}
+        </div>
+      )}
+
+      {tab === 'history' && OPENING_HISTORY[id] && (
+        <div className="history mt8">
+          <div className="grid-2">
+            <div className="panel">
+              <h3>Named after</h3>
+              <p className="mt8">{OPENING_HISTORY[id].namesake}</p>
+              <p className="muted mt8">{OPENING_HISTORY[id].origin}</p>
+            </div>
+            <div className="panel">
+              <h3>How its pioneers played it</h3>
+              <p className="muted mt8">{OPENING_HISTORY[id].style}</p>
+            </div>
+          </div>
+          <h3 className="mt24">How the theory evolved</h3>
+          <ol className="timeline mt12">
+            {OPENING_HISTORY[id].eras.map((e) => (
+              <li key={e.when + e.title} className="timeline-item">
+                <span className="timeline-when num">{e.when}</span>
+                <span className="timeline-body">
+                  <strong>{e.title}</strong>
+                  <span className="muted">{e.text}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+          {OPENING_HISTORY[id].modelGames.length > 0 && (
+            <>
+              <h3 className="mt24">Model games</h3>
+              <div className="classic-strip mt12">
+                {OPENING_HISTORY[id].modelGames.map((gid) => {
+                  const g = getClassic(gid);
+                  return g ? (
+                    <button key={gid} className="classic-mini" onClick={() => navigate(`/classics/${gid}`)}>
+                      <span className="classic-year num">{g.year}</span>
+                      <span className="classic-title">{g.title}</span>
+                      <span className="muted small">{g.white} – {g.black}</span>
+                    </button>
+                  ) : null;
+                })}
+              </div>
+            </>
+          )}
         </div>
       )}
 

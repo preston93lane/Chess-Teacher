@@ -257,8 +257,19 @@ export function dailySession(state: {
   plan: PlanState | null;
   lessons: Record<string, LessonProgress>;
   repertoire: Record<string, { side: Color }>;
+  dailyPuzzleDone?: boolean;
 }): PlanStep[] {
   const steps: PlanStep[] = [];
+  if (!state.dailyPuzzleDone) {
+    steps.push({
+      id: 'daily-puzzle',
+      kind: 'review',
+      title: 'Daily puzzle',
+      detail: 'One position from a real game, matched to your puzzle rating.',
+      to: '/puzzles/play?mode=daily',
+      minutes: 2,
+    });
+  }
   const due = dueCards(state.cards);
   if (due.length) {
     const lines = due.filter((c) => c.kind === 'line').length;
@@ -313,5 +324,5 @@ export function dailySession(state: {
     const firstLesson = TRACKS[0].steps.find((s) => !state.lessons[s.id.split(':')[1]]?.completed);
     if (firstLesson) steps.push(firstLesson);
   }
-  return steps.slice(0, 5);
+  return steps.slice(0, 6);
 }

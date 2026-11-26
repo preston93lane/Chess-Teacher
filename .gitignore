@@ -1,0 +1,8 @@
+node_modules
+dist
+public/engine/*.wasm
+public/engine/*.js
+public/engine/STOCKFISH-LICENSE.txt
+.DS_Store
+*.log
+.wrangler

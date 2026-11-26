@@ -74,6 +74,7 @@ function LiveGameView({ game }: { game: LiveGame }) {
   const settings = useApp((s) => s.settings);
   const addGame = useApp((s) => s.addGame);
   const logActivity = useApp((s) => s.logActivity);
+  const markPlanStep = useApp((s) => s.markPlanStep);
   const { config } = game;
   const bot = getBot(config.botId);
   const opening = config.openingId ? getOpening(config.openingId) : undefined;
@@ -152,9 +153,10 @@ function LiveGameView({ game }: { game: LiveGame }) {
       });
       addGame(meta);
       logActivity('games');
+      if (g.config.openingId) markPlanStep(`play:${g.config.openingId}:${g.config.userColor}`);
       patch({ saved: true });
     },
-    [patch, addGame, logActivity, bot.name],
+    [patch, addGame, logActivity, markPlanStep, bot.name],
   );
 
   useEffect(() => {

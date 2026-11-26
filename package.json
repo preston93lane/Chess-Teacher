@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Offline chess coach: openings, drills, game analysis and lesson plans.",
+  "license": "GPL-3.0-or-later",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit -p tsconfig.json && vite build",

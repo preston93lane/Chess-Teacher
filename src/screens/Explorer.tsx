@@ -1,3 +1,4 @@
+import { eventLabel } from '../lib/explorer';
 import { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, FlipVertical2, Microscope, X } from 'lucide-react';
 import { Chess, START_FEN, fenKey, type Color, type PieceSymbol, type Square } from '../lib/chess/core';
@@ -150,7 +151,7 @@ export function ExplorerScreen() {
                 <strong>{following.white} – {following.black}</strong>
                 <IconButton label="Stop following" onClick={() => { setLine(line.slice(0, ply)); setFollowing(null); }}><X size={18} /></IconButton>
               </div>
-              <p className="muted small">{following.event} {following.year} · {following.result === '1/2-1/2' ? '½–½' : following.result} · use the arrows to play through the game</p>
+              <p className="muted small">{eventLabel(following)} · {following.result === '1/2-1/2' ? '½–½' : following.result} · use the arrows to play through the game</p>
             </div>
           )}
           <div className="panel">

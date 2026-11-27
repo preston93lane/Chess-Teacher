@@ -6,6 +6,8 @@
 import { createRequire } from 'node:module';
 import { Chess } from 'chess.js';
 import { ALL_DRILLS, ENDGAME_LESSONS } from '../src/data/endgames';
+import { COURSE_LESSONS } from '../src/data/courseLessons';
+import { parseMovetext } from '../src/lib/chess/pgn';
 import { LESSONS } from '../src/data/lessons/index';
 
 const require = createRequire(import.meta.url);
@@ -55,10 +57,11 @@ function legal(fen: string, label: string) {
     return { score, best };
   }
 
-  const ids = new Set<string>();
-  for (const d of ALL_DRILLS) {
-    if (ids.has(d.id)) bad(`duplicate drill id ${d.id}`);
-    ids.add(d.id);
+  const ids = new Set<string>(ALL_DRILLS.map((d) => d.id));
+  const seenIds = new Set<string>();
+  for (const d of process.argv[3] ? [] : ALL_DRILLS) {
+    if (seenIds.has(d.id)) bad(`duplicate drill id ${d.id}`);
+    seenIds.add(d.id);
     const c = legal(d.fen, `drill ${d.id}`);
     if (!c) continue;
     const { score } = await evalFen(d.fen);
@@ -79,11 +82,26 @@ function legal(fen: string, label: string) {
     }
   }
 
-  for (const l of ENDGAME_LESSONS) {
+  const only = process.argv[3];
+  for (const l of [...ENDGAME_LESSONS, ...COURSE_LESSONS]) {
+    if (only && only !== 'courses' && l.id !== only) continue;
+    if (only === 'courses' && !COURSE_LESSONS.includes(l)) continue;
     for (const [i, s] of l.sections.entries()) {
-      if (!s.fen) continue;
-      const c = legal(s.fen, `lesson ${l.id}#${i}`);
+      let fen = s.fen;
+      if (s.pgn) {
+        const c0 = new Chess(s.fen);
+        try {
+          for (const t of parseMovetext(s.pgn).sans) c0.move(t.san);
+        } catch (e) {
+          bad(`lesson ${l.id}#${i}: illegal move in pgn (${(e as Error).message})`);
+          continue;
+        }
+        fen = c0.fen();
+      }
+      if (!fen) continue;
+      const c = legal(fen, `lesson ${l.id}#${i}`);
       if (!c || !s.task) continue;
+      s.fen = fen;
       const best = await evalFen(s.fen);
       for (const a of s.task.accept) {
         let after: string;

@@ -1,5 +1,6 @@
 import type { Lesson } from '../../lib/lessons/types';
 import { ENDGAME_LESSONS } from '../endgames';
+import { COURSE_LESSONS } from '../courseLessons';
 
 const QGA_IQP =
   '1.d4 d5 2.c4 dxc4 3.Nf3 Nf6 4.e3 e6 5.Bxc4 c5 6.O-O a6 7.a4 Nc6 8.Qe2 cxd4 9.Rd1 Be7 10.exd4 O-O 11.Nc3';
@@ -495,7 +496,7 @@ export const LESSONS: Lesson[] = [
   },
 ];
 
-LESSONS.push(...ENDGAME_LESSONS);
+LESSONS.push(...ENDGAME_LESSONS, ...COURSE_LESSONS);
 
 export function getLesson(id: string) {
   return LESSONS.find((l) => l.id === id);

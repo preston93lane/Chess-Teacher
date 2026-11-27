@@ -683,3 +683,14 @@
 .rep-gap { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; text-align: left; padding: 8px 0; border: 0; border-top: 1px solid var(--line-soft); background: none; font-size: 14px; }
 .rep-line { cursor: default; }
 .link-btn.danger { color: var(--t-blunder); }
+
+/* ── Courses ───────────────────────────────────────────────── */
+.course-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.course-card { display: flex; flex-direction: column; gap: 8px; text-align: left; padding: 16px 18px; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid var(--line-soft); transition: border-color 0.15s, transform 0.15s; }
+.course-card:hover { border-color: var(--line); transform: translateY(-1px); }
+.course-card-title { font-size: 20px; font-weight: 800; font-stretch: 85%; }
+.course-card-progress { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; margin-top: auto; }
+.trainer-card.is-featured { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
+.trainer-card.is-featured svg { color: var(--primary-ink); }
+.trainer-card.is-featured .muted { color: color-mix(in srgb, var(--primary-ink) 70%, transparent); }
+.vis-line { font-size: 20px; font-weight: 700; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--surface-2); }

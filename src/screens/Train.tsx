@@ -1,4 +1,4 @@
-import { ArrowRight, ChartNoAxesColumn, Check, Crown, Database, Eye, GitBranch, Play } from 'lucide-react';
+import { ArrowRight, ChartNoAxesColumn, Check, Crown, Database, Eye, GitBranch, GraduationCap, Play } from 'lucide-react';
 import { ALL_DRILLS } from '../data/endgames';
 import { useApp, dueCards } from '../lib/store/app';
 import { navigate } from '../lib/router';
@@ -80,8 +80,13 @@ export function Train() {
         <p className="muted">See a position, name the opening, then play the next theory move. {quizBest !== undefined ? `Best library score: ${quizBest}.` : ''}</p>
       </Section>
 
-      <Section title="Skill trainers">
+      <Section title="Courses & trainers" action={<button className="link-btn" onClick={() => navigate('/courses')}>All courses <ArrowRight size={14} /></button>}>
         <div className="trainer-grid">
+          <button className="trainer-card is-featured" onClick={() => navigate('/courses')}>
+            <GraduationCap size={22} />
+            <span className="trainer-card-title">Courses</span>
+            <span className="muted small">Mating patterns, attack, defence, calculation, blindfold, structures and endgames.</span>
+          </button>
           <button className="trainer-card" onClick={() => navigate('/endgames')}>
             <Crown size={22} />
             <span className="trainer-card-title">Endgame course</span>

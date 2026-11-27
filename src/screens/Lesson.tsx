@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, Crosshair, Eye, Swords } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Crosshair, Database, Eye, Swords } from 'lucide-react';
 import { getLesson } from '../data/lessons';
 import type { LessonSection } from '../lib/lessons/types';
 import { Chess, type Color, type PieceSymbol, type Square } from '../lib/chess/core';
@@ -208,6 +208,11 @@ function SectionView({ section, solved, onSolved }: { section: LessonSection; so
             onClick={() => navigate(`/play?fen=${encodeURIComponent(base.fen)}&side=${section.practice!.side}`)}
           >
             {section.practice.prompt}
+          </Button>
+        )}
+        {section.explore && (
+          <Button variant="secondary" icon={<Database size={16} />} onClick={() => navigate(section.pgn ? `/explorer?moves=${encodeURIComponent(section.pgn)}` : `/explorer?fen=${encodeURIComponent(base.fen)}`)}>
+            Master games from here
           </Button>
         )}
         {section.drill && (

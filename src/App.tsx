@@ -38,6 +38,9 @@ import { setCustomOpeningResolver } from './lib/openings/book';
 import { repToOpening } from './lib/repertoire';
 import { scoutOpening } from './lib/scout';
 import { ScoutHome, ScoutReport } from './screens/Scout';
+import { CoursesHub, CourseScreen } from './screens/Courses';
+import { CctTrainer, VisualizeTrainer } from './screens/Calculation';
+import { ThreatSpotter, GuessTheMove } from './screens/MasterTrainers';
 
 // Your own repertoires resolve as openings ("rep:<id>") for the trainers.
 setCustomOpeningResolver((id) => {
@@ -59,7 +62,7 @@ const TABS = [
   { path: '/play', label: 'Play', icon: Swords, match: (p: string) => p.startsWith('/play') || p.startsWith('/clock') },
   { path: '/puzzles', label: 'Puzzles', icon: Puzzle, match: (p: string) => p.startsWith('/puzzles') },
   { path: '/openings', label: 'Openings', icon: BookOpen, match: (p: string) => p.startsWith('/openings') || p.startsWith('/explorer') || p.startsWith('/repertoire') },
-  { path: '/train', label: 'Train', icon: Target, match: (p: string) => p.startsWith('/train') || p.startsWith('/classics') || p.startsWith('/program') || p.startsWith('/vision') || p.startsWith('/endgames') || p.startsWith('/insights') || p.startsWith('/report') },
+  { path: '/train', label: 'Train', icon: Target, match: (p: string) => p.startsWith('/train') || p.startsWith('/classics') || p.startsWith('/program') || p.startsWith('/vision') || p.startsWith('/endgames') || p.startsWith('/insights') || p.startsWith('/report') || p.startsWith('/courses') },
   { path: '/games', label: 'Games', icon: History, match: (p: string) => p.startsWith('/games') || p.startsWith('/analysis') || p.startsWith('/import') || p.startsWith('/scout') },
 ];
 
@@ -93,6 +96,12 @@ function route(path: string): ReactNode {
   if (p === '/train') return <Train />;
   if (p === '/classics') return <ClassicsList />;
   if ((m = match('/classics/:id', p))) return <ClassicScreen key={p} id={m.id} />;
+  if (p === '/courses') return <CoursesHub />;
+  if ((m = match('/courses/:id', p))) return <CourseScreen key={p} id={m.id} />;
+  if (p === '/train/cct') return <CctTrainer />;
+  if (p === '/train/visualize') return <VisualizeTrainer />;
+  if (p === '/train/threats') return <ThreatSpotter />;
+  if (p === '/train/guess') return <GuessTheMove />;
   if (p === '/train/review') return <ReviewSession />;
   if (p === '/train/plan') return <PlanScreen />;
   if ((m = match('/train/lesson/:id', p))) return <LessonScreen id={m.id} />;

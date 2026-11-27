@@ -1,3 +1,4 @@
+import { eventLabel } from '../lib/explorer';
 import { useEffect, useState } from 'react';
 import { Database } from 'lucide-react';
 import { explorerMeta, loadExplorer, lookup, pct, type ExplorerEntry, type MasterGame } from '../lib/explorer';
@@ -98,7 +99,7 @@ export function MasterMoves({
                 <span>{g.black} <span className="faint num">{g.blackElo}</span></span>
               </span>
               <span className={`master-game-result num${g.result === '1-0' ? ' is-w' : g.result === '0-1' ? ' is-b' : ''}`}>{g.result === '1/2-1/2' ? '½–½' : g.result.replace('-', '–')}</span>
-              <span className="faint small master-game-event">{g.event} {g.year}</span>
+              <span className="faint small master-game-event">{eventLabel(g)}</span>
             </button>
           ))}
         </div>

@@ -23,6 +23,8 @@ export interface LessonSection {
   practice?: { side: Color; prompt: string };
   /** Endgame drill id to practise this position against the engine. */
   drill?: string;
+  /** Offer “Master games from here” (opening explorer). */
+  explore?: boolean;
 }
 
 export type Track = 'Pawn structures' | 'Pieces & squares' | 'Attack & defence' | 'Thinking skills' | 'Endgames';

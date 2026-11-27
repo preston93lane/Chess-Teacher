@@ -91,3 +91,8 @@ export function scoreFor(m: ExplorerMove, mover: 'w' | 'b') {
   const s = (m.white + m.draws / 2) / (m.total || 1);
   return mover === 'w' ? s : 1 - s;
 }
+
+/** "Norway Chess 2025" — without repeating the year when the event name has it. */
+export function eventLabel(g: { event: string; year: string }) {
+  return g.event.includes(g.year) ? g.event : `${g.event} ${g.year}`.trim();
+}

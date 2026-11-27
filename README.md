@@ -1,6 +1,6 @@
 # Outpost — offline chess coach
 
-Outpost is a chess training app for intermediate and advanced players. It runs entirely on your device, including a Stockfish 18 engine compiled to WebAssembly, so it works offline once installed. On iPhone you install it from Safari as a home-screen app.
+Outpost is a chess training app for intermediate and advanced players. It runs entirely on your device, including a Stockfish 18 engine compiled to WebAssembly (multi-threaded where the browser allows it), so it works offline once installed. On iPhone you install it from Safari as a home-screen app.
 
 ## What it does
 
@@ -31,6 +31,10 @@ Outpost is a chess training app for intermediate and advanced players. It runs e
 
 To rebuild the set, run `scripts/build-puzzles.py`.
 
+**Premoves.** Queue your next move while the bot is thinking; it plays the moment it becomes legal (tap elsewhere to cancel).
+
+**More ways to play.** Chess960 (random or numbered start positions, the engine plays in Chess960 mode), Fog of War (you only see squares your pieces can reach, there is no check, and you win by capturing the king; fog bots play only from what they can see), two players on one device (the board turns to the player to move, or a face-to-face table mode with Black's pieces upside down, and a privacy screen between moves in Fog of War), a chess clock for over-the-board games, and blindfold games against the coach with fading or hidden pieces and a hold-to-peek button. Two-player games are saved to Games for a coach review.
+
 **Timed games.** Time controls from 1+0 to 30+20. The bots manage their clocks like people: fast in known positions and on forced moves, slower in sharp ones, quicker the stronger they are, and they slip a little when short of time.
 
 **Classic games.** 17 annotated immortal games. Replay them with commentary, or play the winner's side and find the key moves. Each opening also has a History tab with its namesake, how the theory evolved, and model games.
@@ -44,6 +48,18 @@ To rebuild the set, run `scripts/build-puzzles.py`.
 - Checkpoints at week 4 and at the end measure progress against your starting point.
 - Blocks tick themselves off as you finish them.
 
+**Courses.** Ten courses, each a path through one skill with engine-checked lessons, trainers and themed puzzle sets from real games:
+
+- Checkmate patterns: back rank, smothered (and Philidor's legacy), Anastasia, Arabian, Boden, epaulette and Légal, then puzzles for each pattern.
+- Attacking the king: when the Greek gift works, Lasker's double-bishop sacrifice, opposite-side castling.
+- Defence: ask what your opponent wants, prophylaxis, and the threat spotter (show the threat in a master-game position, then stop it).
+- Calculation and visualization: checks & captures (find every forcing move), visualize the line (moves are read out while the board stays still), board vision.
+- Blindfold chess: a five-step path from board vision to full blindfold games.
+- Pawn structures I and II, including the Stonewall, Modern Benoni, Maróczy bind and the Carlsbad from Black's side, with links to master games from each position.
+- Opening traps: thirteen classic traps to spring and to avoid.
+- Guess the master's move: play through a top game as the winner, with points for exact matches and engine-graded partial credit.
+- Endgame technique and practical endgames.
+
 **Endgame course.** Seven technique lessons and 17 drills against a full-strength engine that defends (or attacks) as well as it can:
 
 - Basic mates: queen, rook, two bishops, and bishop and knight (the final net, getting out of the wrong corner, and the whole mate from the centre). Mate before the 50-move rule.
@@ -52,7 +68,7 @@ To rebuild the set, run `scripts/build-puzzles.py`.
 - Queen against a pawn on the seventh (the staircase win, and the stalemate defence with bishop and rook pawns), and fortresses with rook pawns and the wrong bishop.
 - Rook endings: Lucena and Philidor.
 
-A drill is passed by reaching its goal: checkmate, promoting safely, or holding the draw for a set number of moves. If a move throws the result away, the engine confirms it with a deeper search, then offers a takeback and a better move. Every position and claim is checked with `scripts/validate-endgames.ts`.
+Drills you pass come back on a spaced-repetition schedule, in Today's session and on the course page. A drill is passed by reaching its goal: checkmate, promoting safely, or holding the draw for a set number of moves. If a move throws the result away, the engine confirms it with a deeper search, then offers a takeback and a better move. Every position and claim is checked with `scripts/validate-endgames.ts`.
 
 **Opening explorer.** What masters play in each position: 85,137 over-the-board games (classical, rapid and blitz events) with both players rated 2300+, from the Lichess broadcast database (CC0), stored on the device. For each move it shows the number of games, White wins, draws and Black wins, and the average rating, plus the strongest games that reached the position, which you can play through. It is also a *Masters* tab on the analysis board and a *Master games* button on every opening. To rebuild it, run `scripts/fetch-broadcasts.sh <months> | node scripts/build-explorer.mjs`.
 
@@ -66,7 +82,15 @@ A drill is passed by reaching its goal: checkmate, promoting safely, or holding 
 - An activity calendar.
 - Recommendations that link to the right trainer.
 
+**Weekly report.** Days trained, games, accuracy, puzzles and study for each week compared with the week before, with highlights and what to focus on next.
+
+**Themes.** Ten board colours and eleven piece sets.
+
 **Board vision.** Timed drills: find a named square on a board without coordinates, name a highlighted square, light or dark square, knight-route distances, and same-diagonal checks.
+
+**Your own repertoires.** Build an opening tree move by move with the coach: at your moves it shows master statistics, the engine's top three moves and a suggested move, and warns about dubious or rarely successful choices; at the opponent's moves it shows the replies masters play and which you have prepared. A coach check lists gaps, and the coach can extend the tree to a chosen move number. Start empty or from a library opening, add your own notes, then learn and drill the lines with spaced repetition or play them against a bot.
+
+**Scout an opponent.** Download a player's recent Lichess or Chess.com games: their score as White and Black, how they lose, their first moves and replies, openings with scores, notes on where to steer, and their opening tree on a board. Then practise against a bot, matched to their rating, that plays their moves as often as they chose them.
 
 **Opening library.** 14 openings with 58 annotated lines for both colours: Ruy Lopez, Italian, Queen's Gambit, London, Catalan, English, Najdorf, Dragon, French, Caro-Kann, King's Indian, Nimzo-Indian, Grünfeld and Slav. Each one comes with its main ideas for both sides, typical structures, middlegame plans and traps. Every line has been checked move by move with Stockfish.
 
@@ -74,7 +98,7 @@ A drill is passed by reaching its goal: checkmate, promoting safely, or holding 
 - **Drill** makes you recall it. Missed moves are flagged and come back sooner.
 - **Play it** starts a game where the bot follows theory from that opening until it runs out. If you leave the book, the coach tells you what theory recommends.
 
-**Games and analysis.** Import games from PGN (paste or file), Lichess or Chess.com. The coach review grades every move, works out accuracy per side and per phase, finds the key moments and writes a short summary. Critical verdicts are re-checked with a deeper search before they are shown. You can explore variations and get a coach comment on any move you try.
+**Games and analysis.** Import games from PGN (paste or file), Lichess or Chess.com — or link your usernames in Settings and new games sync automatically when the app opens. The coach review grades every move, works out accuracy per side and per phase, finds the key moments and writes a short summary. Critical verdicts are re-checked with a deeper search before they are shown. You can explore variations and get a coach comment on any move you try. After a review, *Retry your mistakes* replays each position where you went wrong. On a phone, previous/next buttons sit in the right-thumb zone.
 
 **Your games become lessons.** After a review, each of your mistakes becomes a "find the better move" position in your review deck. You can save any position from the analysis board, or play on from it against the bot.
 
@@ -154,7 +178,7 @@ This checks that every endgame drill and lesson position is legal and that the e
 
 ## How the coach works
 
-- `src/lib/engine/stockfish.ts` is a UCI driver for the single-threaded Stockfish WASM build in a Web Worker. It queues jobs, can cancel them, and caches results.
+- `src/lib/engine/stockfish.ts` is a UCI driver for Stockfish WASM in a Web Worker: the multi-threaded build when the page is cross-origin isolated (the service worker in `src/sw.ts` adds the headers), otherwise the single-threaded one. It queues jobs, can cancel them, and caches results.
 - `src/lib/coach/board.ts` holds attack maps and static exchange evaluation.
 - `src/lib/coach/tactics.ts` detects forks, pins, skewers, discovered attacks, hanging pieces and sacrifices, and measures what an engine line wins.
 - `src/lib/coach/structure.ts` works out pawn structure, outposts, files, king safety and piece activity, and stores a plan library per structure.
@@ -164,7 +188,8 @@ This checks that every endgame drill and lesson position is legal and that the e
 ## Licences
 
 - Stockfish.js is GPLv3.
-- The cburnett chess pieces are GPLv2+.
+- The cburnett chess pieces are GPLv2+. Other piece sets come from the Lichess collection: Merida (GPLv2+, Armando Hernandez Marroquin), Chessnut (Apache 2.0, Alexis Luengas), Celtic, Spatial and Fantasy (MIT, Maurizio Monge), Bold/mpchess (GPLv3+, Maxime Chupin), Papercut (CC BY 4.0, Nikolay Anzarov), Totoy (CC BY 4.0, Kosal Sen), Kiwen (CC BY 4.0, neverRare) and Pixel/rhosgfx (CC0, RhosGFX).
+- Chess960 and Fog of War rules use [chessops](https://github.com/niklasf/chessops) (GPL-3.0-or-later).
 - Opening names come from the [lichess chess-openings](https://github.com/lichess-org/chess-openings) dataset (CC0).
 - Puzzles come from the [Lichess puzzle database](https://database.lichess.org/#puzzles) (CC0).
 - Opening explorer statistics come from the [Lichess broadcast database](https://database.lichess.org/#broadcasts) (CC0).

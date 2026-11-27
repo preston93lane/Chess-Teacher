@@ -104,6 +104,24 @@ export const COURSES: Course[] = [
     ],
   },
   {
+    id: 'traps',
+    title: 'Opening traps',
+    blurb: 'Thirteen classic traps — Fool’s and Scholar’s mate, Légal, Noah’s Ark, the Elephant, Lasker, Siberian and more. Spring them, and never fall for them.',
+    sections: [
+      { title: 'Trainer', items: [{ kind: 'trainer', title: 'Spring the trap', detail: 'The game reaches the critical moment: find the move, then watch the trap close.', to: '/train/traps' }] },
+      { title: 'Practice', items: [...puzzles('opening'), { kind: 'trainer', title: 'Opening quiz', detail: 'Name the opening from the position and play the next theory move.', to: '/openings/quiz' }] },
+    ],
+  },
+  {
+    id: 'endgame-practice',
+    title: 'Practical endgames',
+    blurb: 'Endgame positions from real games, by material: rook, pawn, queen, bishop and knight endings, plus promotion races and zugzwang.',
+    sections: [
+      { title: 'Puzzles from real endgames', items: puzzles('rookEndgame', 'pawnEndgame', 'queenEndgame', 'bishopEndgame', 'knightEndgame', 'zugzwang', 'promotion', 'advancedPawn') },
+      { title: 'Technique', items: [{ kind: 'trainer', title: 'Endgame course', detail: 'Lessons and drills against the engine, with spaced reviews.', to: '/endgames' }] },
+    ],
+  },
+  {
     id: 'guess',
     title: 'Guess the master’s move',
     blurb: 'Play through a top-level game as the winner and predict each move. Points for exact matches and for moves the engine rates as just as good.',

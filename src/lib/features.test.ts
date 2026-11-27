@@ -100,3 +100,17 @@ describe('insights', () => {
     expect(recommendations(ins, (t) => t)).toBeInstanceOf(Array);
   });
 });
+
+describe('opening traps', () => {
+  it('every trap line is legal and contains its key move', async () => {
+    const { allTraps } = await import('../data/traps');
+    const { parseMovetext } = await import('./chess/pgn');
+    const traps = allTraps();
+    expect(traps.length).toBeGreaterThanOrEqual(13);
+    for (const t of traps) {
+      const c = new Chess();
+      const sans = parseMovetext(t.pgn).sans.map((x) => c.move(x.san).san);
+      expect(sans.indexOf(t.key), t.name).toBeGreaterThan(0);
+    }
+  });
+});

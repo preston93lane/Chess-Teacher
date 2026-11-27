@@ -41,6 +41,7 @@ import { ScoutHome, ScoutReport } from './screens/Scout';
 import { CoursesHub, CourseScreen } from './screens/Courses';
 import { CctTrainer, VisualizeTrainer } from './screens/Calculation';
 import { ThreatSpotter, GuessTheMove } from './screens/MasterTrainers';
+import { TrapTrainer } from './screens/Traps';
 
 // Your own repertoires resolve as openings ("rep:<id>") for the trainers.
 setCustomOpeningResolver((id) => {
@@ -102,6 +103,7 @@ function route(path: string): ReactNode {
   if (p === '/train/visualize') return <VisualizeTrainer />;
   if (p === '/train/threats') return <ThreatSpotter />;
   if (p === '/train/guess') return <GuessTheMove />;
+  if (p === '/train/traps') return <TrapTrainer />;
   if (p === '/train/review') return <ReviewSession />;
   if (p === '/train/plan') return <PlanScreen />;
   if ((m = match('/train/lesson/:id', p))) return <LessonScreen id={m.id} />;

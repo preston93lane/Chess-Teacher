@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, BookOpen, Check, Eye, GitBranch, Repeat, Shuffle } from 'lucide-react';
 import { Chess, type Color, type PieceSymbol, type Square } from '../lib/chess/core';
 import { getOpening } from '../lib/openings/book';
@@ -6,9 +6,12 @@ import { useApp } from '../lib/store/app';
 import { navigate, query, useRoute } from '../lib/router';
 import { playSound, soundForSan } from '../lib/sound';
 import { describeMove } from '../lib/coach/explain';
-import { buildTree, fenAt, isLearned, key, moveLabel, myKeys, myMoves, pickReply, summary, turnAt, type TrainLine } from '../lib/repTrainer';
+import { ContinuationPanel } from '../components/Continuation';
+import { loadExplorer } from '../lib/explorer';
+import { addPath } from '../lib/repertoire';
+import { buildTree, styledAnswer, surpriseReply, fenAt, isLearned, key, moveLabel, myKeys, myMoves, pickReply, summary, turnAt, type TrainLine } from '../lib/repTrainer';
 import { Board, type Arrow } from '../components/Board';
-import { Button, Header, NextDock, Sheet } from '../components/ui';
+import { Button, Header, NextDock, Sheet, Toggle } from '../components/ui';
 import type { Opening } from '../lib/openings/types';
 import type { Grade } from '../lib/srs/scheduler';
 
@@ -23,14 +26,14 @@ export function RepTrainer({ openingId, mode }: { openingId: string; mode: RepMo
   const opening = getOpening(openingId);
   if (!opening) return <div className="page"><Header title="Opening not found" backTo="/openings" /></div>;
   const side = (q.get('side') as Color) ?? opening.side;
-  return <Trainer key={`${openingId}-${mode}-${q.get('line') ?? ''}`} opening={opening} side={side} mode={mode} lineId={q.get('line')} onlyLearned={q.get('only') === 'learned'} />;
+  return <Trainer key={`${openingId}-${mode}-${q.get('line') ?? ''}`} opening={opening} side={side} mode={mode} lineId={q.get('line')} onlyLearned={q.get('only') === 'learned'} surpriseInit={q.get('surprise') === '1'} />;
 }
 
 function homeOf(o: Opening) {
   return o.id.startsWith('rep:') ? `/repertoire/${o.id.slice(4)}` : `/openings/${o.id}`;
 }
 
-function Trainer({ opening, side, mode, lineId, onlyLearned }: { opening: Opening; side: Color; mode: RepMode; lineId: string | null; onlyLearned: boolean }) {
+function Trainer({ opening, side, mode, lineId, onlyLearned, surpriseInit }: { opening: Opening; side: Color; mode: RepMode; lineId: string | null; onlyLearned: boolean; surpriseInit: boolean }) {
   const oid = opening.id;
   const { tree, lines } = useMemo(() => buildTree(opening), [opening]);
   const stats = useApp((s) => s.repTrain[oid]) ?? {};
@@ -56,6 +59,31 @@ function Trainer({ opening, side, mode, lineId, onlyLearned }: { opening: Openin
   const [callout, setCallout] = useState<{ san: string; ply: number; others: string[]; note?: string } | null>(null);
   const [session, setSession] = useState({ runs: 0, clean: 0, moves: 0, misses: 0, weak: [] as string[] });
   const [linesOpen, setLinesOpen] = useState(false);
+  const finishedRef = useRef(false);
+  // About one line in three steps off your preparation.
+  const surpriseRun = useRef(Math.random() < 0.35);
+  const [surprise, setSurpriseState] = useState(() => {
+    try {
+      return surpriseInit || localStorage.getItem('reptrain-surprise') === '1';
+    } catch {
+      return surpriseInit;
+    }
+  });
+  const setSurprise = (v: boolean) => {
+    setSurpriseState(v);
+    try {
+      localStorage.setItem('reptrain-surprise', v ? '1' : '0');
+    } catch {
+      /* ignore */
+    }
+  };
+  const [offBook, setOffBook] = useState<{ san: string; ply: number; share: number; games: number } | null>(null);
+  const customRep = useApp((s) => (oid.startsWith('rep:') ? s.customReps[oid.slice(4)] : undefined));
+  const saveRep = useApp((s) => s.saveRep);
+  const [added, setAdded] = useState(false);
+  useEffect(() => {
+    if (surprise) loadExplorer().catch(() => null);
+  }, [surprise]);
 
   const fen = useMemo(() => fenAt(path), [path]);
   const ply = path.length;
@@ -74,6 +102,19 @@ function Trainer({ opening, side, mode, lineId, onlyLearned }: { opening: Openin
     if (done || myTurn) return;
     if (atEnd) return;
     const id = setTimeout(() => {
+      // Now and then, step off your preparation with a popular master move.
+      if (!target && surprise && surpriseRun.current && path.length < 14 && Math.random() < 0.45) {
+        const s = surpriseReply(tree, path);
+        if (s) {
+          soundForSan(s.san);
+          const p2 = [...path, s.san];
+          setOffBook({ ...s, ply });
+          setCallout(null);
+          setPath(p2);
+          finish(p2);
+          return;
+        }
+      }
       const san = target ? target.sans[ply] : pickReply(tree, path, side, stats, onlyLearned);
       if (!san) {
         finish(path);
@@ -93,7 +134,8 @@ function Trainer({ opening, side, mode, lineId, onlyLearned }: { opening: Openin
   }, [atEnd, done]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function finish(p: string[]) {
-    if (done) return;
+    if (done || finishedRef.current) return;
+    finishedRef.current = true;
     setDone(true);
     playSound('end');
     logActivity('lines');
@@ -109,6 +151,8 @@ function Trainer({ opening, side, mode, lineId, onlyLearned }: { opening: Openin
   }
 
   function restart() {
+    finishedRef.current = false;
+    surpriseRun.current = Math.random() < 0.35;
     setPath([]);
     setDone(false);
     setWrong(null);
@@ -116,6 +160,8 @@ function Trainer({ opening, side, mode, lineId, onlyLearned }: { opening: Openin
     setFailed(new Set());
     setGraded(new Set());
     setCallout(null);
+    setOffBook(null);
+    setAdded(false);
   }
 
   const onMove = (m: { from: Square; to: Square; promotion?: PieceSymbol }) => {
@@ -252,6 +298,12 @@ function Trainer({ opening, side, mode, lineId, onlyLearned }: { opening: Openin
                     <h3><Check size={18} className="inline-icon" /> Line learned</h3>
                     <p className="muted">{failed.size === 0 ? 'Every known move right, and the new ones are in your memory schedule.' : `${failed.size} slip${failed.size === 1 ? '' : 's'} on moves you’d seen before — they’ll come up again soon.`}</p>
                   </>
+                ) : offBook ? (
+                  <OffBook offBook={offBook} sug={styledAnswer(tree, path, side)} side={side} canAdd={!!customRep && !added} onAdd={(reply) => {
+                    if (!customRep) return;
+                    saveRep(addPath(customRep, reply ? [...path, reply] : path));
+                    setAdded(true);
+                  }} added={added} />
                 ) : sessionOver ? (
                   <>
                     <h3>Session done</h3>
@@ -268,6 +320,12 @@ function Trainer({ opening, side, mode, lineId, onlyLearned }: { opening: Openin
             )}
           </div>
 
+          {done && !sessionOver && <ContinuationPanel key={path.join(' ')} path={path} side={side} first={offBook ? styledAnswer(tree, path, side)?.san : undefined} title={offBook ? 'How to meet it' : 'Where it goes next'} />}
+          {mode === 'tree' && (
+            <div className="panel panel-tight">
+              <Toggle checked={surprise} onChange={setSurprise} label="Surprise me" hint="Now and then the opponent plays a popular master move you haven’t prepared." />
+            </div>
+          )}
           <p className="muted small num">{sum.learnedLines}/{sum.lines} lines learned · {sum.due} move{sum.due === 1 ? '' : 's'} due for review</p>
           {mode !== 'learn' && <button className="link-btn small" onClick={() => setLinesOpen(true)}>Practise a specific line instead</button>}
         </div>
@@ -354,5 +412,25 @@ export function RepTrainPanel({ opening, side }: { opening: Opening; side: Color
       <button className="link-btn" onClick={() => setOpen(true)}>Practise one specific line</button>
       <LinePicker open={open} onClose={() => setOpen(false)} opening={opening} side={side} lines={lines} stats={stats} />
     </div>
+  );
+}
+
+function OffBook({ offBook, sug, side, canAdd, onAdd, added }: { offBook: { san: string; ply: number; share: number; games: number }; sug: { san: string; reason: string } | null; side: Color; canAdd: boolean; onAdd: (reply?: string) => void; added: boolean }) {
+  const opp = NAME[side === 'w' ? 'b' : 'w'];
+  return (
+    <>
+      <h3>Out of your preparation</h3>
+      <p>
+        {opp} played <strong className="num">{moveLabel(offBook.ply, offBook.san)}</strong>
+        <span className="muted"> — {Math.round(offBook.share * 100)}% of master games here ({offBook.games}), and not in your repertoire.</span>
+      </p>
+      {sug ? (
+        <p>Masters’ choice: <strong className="num">{moveLabel(offBook.ply + 1, sug.san)}</strong> <span className="muted small">({sug.reason}).</span></p>
+      ) : (
+        <p className="muted">The database has nothing more here — the engine line below shows a sensible way on.</p>
+      )}
+      {canAdd && <Button size="sm" variant="secondary" onClick={() => onAdd(sug?.san)}>Add {offBook.san}{sug ? ` → ${sug.san}` : ''} to my repertoire</Button>}
+      {added && <p className="tone-text-best small"><Check size={14} className="inline-icon" /> Added — it’ll be taught as a new line.</p>}
+    </>
   );
 }

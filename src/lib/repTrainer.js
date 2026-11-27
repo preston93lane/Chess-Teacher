@@ -8,6 +8,7 @@
  */
 import { Chess, START_FEN } from './chess/core';
 import { parseLine } from './openings/book';
+import { lookup } from './explorer';
 export const key = (sans) => sans.join(' ');
 const treeCache = new WeakMap();
 /** The opening's lines merged into one move tree (keyed by path from the start). */
@@ -137,4 +138,76 @@ export function myMoves(tree, path) {
 }
 export function moveLabel(ply, san) {
     return ply % 2 === 0 ? `${ply / 2 + 1}.${san}` : `${Math.floor(ply / 2) + 1}…${san}`;
+}
+// ---------------------------------------------------------------------------
+// Off-book surprises and "where it goes next" (need the master explorer loaded)
+/**
+ * A popular master move the tree doesn't cover here (≥5% of games), picked
+ * by popularity — the opponent stepping off your preparation.
+ */
+export function surpriseReply(tree, path) {
+    const entry = lookup(fenAt(path));
+    if (!entry || entry.total < 20)
+        return null;
+    const covered = new Set(tree.get(key(path))?.children ?? []);
+    const options = entry.moves.filter((m) => !covered.has(m.san) && m.total / entry.total >= 0.05 && m.total >= 10);
+    if (!options.length)
+        return null;
+    let r = Math.random() * options.reduce((a, m) => a + m.total, 0);
+    for (const m of options) {
+        r -= m.total;
+        if (r <= 0)
+            return { san: m.san, share: m.total / entry.total, games: m.total };
+    }
+    const m = options[0];
+    return { san: m.san, share: m.total / entry.total, games: m.total };
+}
+/** The most-played master continuation from here, as UCI moves (up to `plies`). */
+export function masterContinuation(path, plies, first) {
+    const c = new Chess(fenAt(path));
+    const out = [];
+    for (let i = 0; i < plies; i++) {
+        let san = i === 0 ? first : undefined;
+        if (!san) {
+            const entry = lookup(c.fen());
+            if (!entry || !entry.moves.length || entry.moves[0].total < 5)
+                break;
+            san = entry.moves[0].san;
+        }
+        try {
+            const m = c.move(san);
+            out.push(m.from + m.to + (m.promotion ?? ''));
+        }
+        catch {
+            break;
+        }
+    }
+    return out;
+}
+/**
+ * A reply to an off-book move that fits your repertoire: among the moves
+ * masters play here (≥5%), prefer one you already play elsewhere in your tree
+ * (Bf4, e3, c3 for a London player); else the most popular sound one.
+ */
+export function styledAnswer(tree, path, side) {
+    const entry = lookup(fenAt(path));
+    if (!entry || !entry.moves.length)
+        return null;
+    const mine = new Map();
+    for (const [k, node] of tree) {
+        const ply = k ? k.split(' ').length : 0;
+        if (turnAt(ply) !== side)
+            continue;
+        for (const c of node.children)
+            mine.set(c, (mine.get(c) ?? 0) + 1);
+    }
+    const options = entry.moves.filter((m) => m.total / entry.total >= 0.05 || m === entry.moves[0]);
+    const score = (m) => {
+        const share = m.total / entry.total;
+        const res = side === 'w' ? (m.white + m.draws / 2) / m.total : (m.black + m.draws / 2) / m.total;
+        return share + (m.total >= 5 ? res * 0.3 : 0) + (mine.has(m.san) ? 1 : 0);
+    };
+    const best = [...options].sort((a, b) => score(b) - score(a))[0];
+    const share = Math.round((best.total / entry.total) * 100);
+    return { san: best.san, reason: mine.has(best.san) ? `in keeping with your repertoire — ${share}% of master games` : `${share}% of master games` };
 }

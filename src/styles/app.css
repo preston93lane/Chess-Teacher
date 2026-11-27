@@ -543,3 +543,8 @@ button.list-item:hover { background: var(--surface-2); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+@media (max-width: 600px) {
+  .page-header:has(.page-header-actions .btn) { flex-wrap: wrap; }
+  .page-header:has(.page-header-actions .btn) .page-header-title { flex-basis: 100%; }
+  .page-header-actions .row { flex-wrap: wrap; gap: 8px; }
+}

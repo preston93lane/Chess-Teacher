@@ -102,6 +102,7 @@ function lineVerdict(fen: string, ucis: string[], line: EngineLine | undefined, 
   if (out.mateFor === other(mover)) return `It walks into mate in ${out.mateIn}.`;
   const phrase = Math.abs(out.material) >= 1 ? materialPhrase(out.lost[other(mover)], out.lost[mover], out.material) : null;
   const v = pawns(line, mover);
+  if (phrase && role === 'key' && out.material < 0) return `It’s still the best try, even though it ${phrase}.`;
   if (phrase) return `${cap(phrase)}${v >= 2 && out.material > 0 ? ' and keeps a winning position' : ''}.`;
   if (role === 'alt') {
     if (v >= 3) return 'It still wins';

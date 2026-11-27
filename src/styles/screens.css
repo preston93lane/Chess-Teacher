@@ -723,3 +723,13 @@
 .next-dock-spacer { height: 72px; }
 @keyframes dock-in { from { transform: translateY(12px); opacity: 0; } }
 @media (min-width: 900px) { .next-dock { bottom: 20px; right: 24px; } }
+.move-rank {
+  display: flex; align-items: center; gap: 10px; margin: 4px 0 10px; padding: 8px 8px 8px 12px;
+  border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line-soft);
+}
+.move-rank-glyph { font-weight: 900; font-size: 20px; min-width: 22px; text-align: center; }
+.move-rank-text { min-width: 0; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.move-rank-best {
+  display: inline-flex; align-items: center; gap: 4px; border: 0; border-radius: 999px; padding: 8px 10px 8px 14px;
+  background: color-mix(in srgb, #68d68a 18%, transparent); color: #68d68a; font: inherit; font-size: 14px; font-weight: 700;
+}

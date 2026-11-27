@@ -296,7 +296,7 @@ function BoardImpl({ fen, orientation = 'w', movable = null, onMove, lastMove, a
                         const ex = x2 - ((x2 - x1) / len) * shorten;
                         const ey = y2 - ((y2 - y1) / len) * shorten;
                         const c = a.color ?? 'g';
-                        return (_jsx("line", { x1: x1, y1: y1, x2: ex, y2: ey, className: `arrow arrow-${c}`, strokeWidth: 0.16, markerEnd: `url(#ah-${c})` }, i));
+                        return (_jsxs("g", { children: [a.onClick && (_jsx("line", { x1: x1, y1: y1, x2: x2, y2: y2, className: "arrow-hit", strokeWidth: 0.7, onClick: (e) => { e.stopPropagation(); a.onClick(); }, onPointerDown: (e) => e.stopPropagation() })), _jsx("line", { x1: x1, y1: y1, x2: ex, y2: ey, className: `arrow arrow-${c}`, strokeWidth: 0.16, markerEnd: `url(#ah-${c})` })] }, i));
                     })] })), badge && badgePos && (_jsx("div", { className: `board-badge tone-${CLASS_INFO[badge.cls].tone}`, style: { left: `${(badgePos.x + 1) * 12.5}%`, top: `${badgePos.y * 12.5}%` }, "aria-label": CLASS_INFO[badge.cls].label, children: CLASS_INFO[badge.cls].glyph })), promo && (_jsx("div", { className: "promo", onPointerDown: (e) => e.stopPropagation(), children: _jsxs("div", { className: "promo-col", style: { left: `${toXY(promo.to).x * 12.5}%` }, children: [['q', 'n', 'r', 'b'].map((t) => (_jsx("button", { className: "promo-btn", onClick: () => {
                                 onMove?.({ from: sqName(promo.from), to: sqName(promo.to), promotion: t });
                                 setPromo(null);

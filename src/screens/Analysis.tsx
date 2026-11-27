@@ -30,6 +30,7 @@ import { soundForSan } from '../lib/sound';
 import { Board, type Arrow } from '../components/Board';
 import { EvalBar } from '../components/EvalBar';
 import { EvalGraph } from '../components/EvalGraph';
+import { FollowUpPanel } from '../components/FollowUp';
 import { MoveList } from '../components/MoveList';
 import { MasterMoves } from '../components/MasterMoves';
 import { retryCandidates } from './RetryMistakes';
@@ -115,6 +116,7 @@ function AnalysisView({ gameId, source, autoReview }: { gameId?: string; source:
   const [showBetter, setShowBetter] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [loadOpen, setLoadOpen] = useState(false);
+  const [walk, setWalk] = useState<MoveReview | null>(null);
   const cancelRef = useRef<{ cancelled: boolean } | null>(null);
   const myColor = meta?.myColor ?? null;
 
@@ -274,8 +276,10 @@ function AnalysisView({ gameId, source, autoReview }: { gameId?: string; source:
       ? review.moves[ply - 1]
       : null;
 
+  // After a less accurate move, the best move is drawn automatically; tap it to walk through why.
+  const missedBest = currentReview && currentReview.bestUci && currentReview.bestUci !== currentReview.uci && WORSE.includes(currentReview.cls) ? currentReview : null;
   const arrows: Arrow[] = [];
-  if (showBetter && currentReview?.bestUci) arrows.push({ from: currentReview.bestUci.slice(0, 2), to: currentReview.bestUci.slice(2, 4), color: 'y' });
+  if ((showBetter || missedBest) && currentReview?.bestUci) arrows.push({ from: currentReview.bestUci.slice(0, 2), to: currentReview.bestUci.slice(2, 4), color: 'y', onClick: () => setWalk(currentReview) });
   else if (settings.showEval && engineOn && live?.lines[0] && !progress) arrows.push({ from: live.lines[0].pv[0].slice(0, 2), to: live.lines[0].pv[0].slice(2, 4), color: 'b' });
 
   const badge = currentReview && lastMove ? { sq: lastMove.to, cls: currentReview.cls } : null;
@@ -401,6 +405,22 @@ function AnalysisView({ gameId, source, autoReview }: { gameId?: string; source:
               <button className="link-btn small" onClick={() => setExplore(null)}><X size={14} /> Back to game</button>
             </div>
           )}
+          {tab === 'coach' && currentReview && (
+            <div className={`move-rank tone-${CLASS_INFO[currentReview.cls].tone}`}>
+              <span className={`move-rank-glyph tone-text-${CLASS_INFO[currentReview.cls].tone}`}>{CLASS_INFO[currentReview.cls].glyph || '•'}</span>
+              <span className="move-rank-text">
+                <strong className="num">{currentReview.san}</strong>
+                <span className={`tone-text-${CLASS_INFO[currentReview.cls].tone}`}> {CLASS_INFO[currentReview.cls].label}</span>
+              </span>
+              {currentReview.bestSan && currentReview.bestUci !== currentReview.uci ? (
+                <button className="move-rank-best" onClick={() => setWalk(currentReview)}>
+                  Best <strong className="num">{currentReview.bestSan}</strong> <ChevronRight size={16} />
+                </button>
+              ) : (
+                <span className="muted small">Best move</span>
+              )}
+            </div>
+          )}
           {review && mainline.length > 0 && (
             <EvalGraph evals={review.evals} moves={review.moves} current={ply} onSelect={go} />
           )}
@@ -520,6 +540,9 @@ function AnalysisView({ gameId, source, autoReview }: { gameId?: string; source:
         </div>
       </div>
 
+      <Sheet open={!!walk} onClose={() => setWalk(null)} title={walk ? `Why ${walk.bestSan} was best` : ''}>
+        {walk?.bestUci && <FollowUpPanel fen={walk.fenBefore} uci={walk.bestUci} tried={[walk.uci]} title={`${walk.bestSan} instead of ${walk.san}`} />}
+      </Sheet>
       <Sheet open={confirmDelete} onClose={() => setConfirmDelete(false)} title="Delete this game?">
         <p className="muted">The game and its review are removed from this device. Review cards made from it stay in your deck.</p>
         <div className="row mt16">
@@ -576,6 +599,7 @@ function uciLine(fen: string, sans: string[]): string[] {
   return out;
 }
 
+const WORSE: MoveClass[] = ['inaccuracy', 'mistake', 'miss', 'blunder'];
 const SUMMARY_CLASSES: MoveClass[] = ['brilliant', 'great', 'best', 'excellent', 'good', 'book', 'inaccuracy', 'mistake', 'miss', 'blunder'];
 
 function ReviewSummary({ review, myColor, onJump, gameId }: { review: GameReview; myColor: Color | null; onJump: (ply: number) => void; gameId?: string }) {

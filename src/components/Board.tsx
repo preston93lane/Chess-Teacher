@@ -16,6 +16,8 @@ export interface Arrow {
   from: string;
   to: string;
   color?: ArrowColor;
+  /** Tapping the arrow calls this. */
+  onClick?: () => void;
 }
 export interface Mark {
   sq: string;
@@ -394,8 +396,11 @@ function BoardImpl({
             const ey = y2 - ((y2 - y1) / len) * shorten;
             const c = a.color ?? 'g';
             return (
+              <g key={i}>
+              {a.onClick && (
+                <line x1={x1} y1={y1} x2={x2} y2={y2} className="arrow-hit" strokeWidth={0.7} onClick={(e) => { e.stopPropagation(); a.onClick!(); }} onPointerDown={(e) => e.stopPropagation()} />
+              )}
               <line
-                key={i}
                 x1={x1}
                 y1={y1}
                 x2={ex}
@@ -404,6 +409,7 @@ function BoardImpl({
                 strokeWidth={0.16}
                 markerEnd={`url(#ah-${c})`}
               />
+              </g>
             );
           })}
         </svg>

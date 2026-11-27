@@ -10,6 +10,7 @@ import { GameScreen } from './screens/Game';
 import { Openings } from './screens/Openings';
 import { OpeningDetail } from './screens/OpeningDetail';
 import { LineTrainer } from './screens/LineTrainer';
+import { RepTrainer, type RepMode } from './screens/RepTrainer';
 import { Train } from './screens/Train';
 import { ReviewSession } from './screens/ReviewSession';
 import { LessonScreen } from './screens/Lesson';
@@ -62,7 +63,7 @@ const TABS = [
   { path: '/', label: 'Today', icon: Sunrise, match: (p: string) => p === '/' },
   { path: '/play', label: 'Play', icon: Swords, match: (p: string) => p.startsWith('/play') || p.startsWith('/clock') },
   { path: '/puzzles', label: 'Puzzles', icon: Puzzle, match: (p: string) => p.startsWith('/puzzles') },
-  { path: '/openings', label: 'Openings', icon: BookOpen, match: (p: string) => p.startsWith('/openings') || p.startsWith('/explorer') || p.startsWith('/repertoire') },
+  { path: '/openings', label: 'Openings', icon: BookOpen, match: (p: string) => p.startsWith('/openings') || p.startsWith('/explorer') || p.startsWith('/repertoire') || p.startsWith('/reptrain') },
   { path: '/train', label: 'Train', icon: Target, match: (p: string) => p.startsWith('/train') || p.startsWith('/classics') || p.startsWith('/program') || p.startsWith('/vision') || p.startsWith('/endgames') || p.startsWith('/insights') || p.startsWith('/report') || p.startsWith('/courses') },
   { path: '/games', label: 'Games', icon: History, match: (p: string) => p.startsWith('/games') || p.startsWith('/analysis') || p.startsWith('/import') || p.startsWith('/scout') },
 ];
@@ -93,6 +94,7 @@ function route(path: string): ReactNode {
   if (p === '/endgames') return <EndgamesHub />;
   if ((m = match('/endgames/:id', p))) return <DrillScreen key={p} id={m.id} />;
   if ((m = match('/openings/:id', p))) return <OpeningDetail id={m.id} />;
+  if ((m = match('/reptrain/:id/:mode', p))) return <RepTrainer key={p} openingId={m.id} mode={m.mode as RepMode} />;
   if ((m = match("/openings/:id/:mode/:line", p))) return <LineTrainer key={p} openingId={m.id} lineId={m.line} mode={m.mode as 'learn' | 'drill'} />;
   if (p === '/train') return <Train />;
   if (p === '/classics') return <ClassicsList />;

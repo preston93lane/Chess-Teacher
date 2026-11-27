@@ -1,3 +1,4 @@
+import { RepTrainPanel } from './RepTrainer';
 import { useMemo, useState } from 'react';
 import { BookOpen, Repeat, Swords, Plus, Check, ArrowRight, Database } from 'lucide-react';
 import { getOpening, parseLine } from '../lib/openings/book';
@@ -82,6 +83,7 @@ export function OpeningDetail({ id }: { id: string }) {
         ))}
       </div>
 
+      {tab === 'lines' && <RepTrainPanel opening={opening} side={side} />}
       {tab === 'lines' && (
         <div className="line-list">
           {opening.lines.map((l) => {

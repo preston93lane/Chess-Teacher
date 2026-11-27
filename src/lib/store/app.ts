@@ -140,6 +140,10 @@ interface AppState {
   vision: Record<string, number>;
   recordVision: (mode: string, score: number) => void;
   drills: Record<string, DrillStat>;
+  /** Repertoire trainer: per opening, a spaced-repetition state for each of your moves (keyed by the path up to and including it). */
+  repTrain: Record<string, Record<string, CardState>>;
+  learnRepMoves: (openingId: string, keys: string[]) => void;
+  gradeRepMove: (openingId: string, key: string, grade: Grade) => void;
   /** Results in Chess960 and Fog of War against the bots. */
   /** Your own repertoires (built in the repertoire builder). */
   customReps: Record<string, Repertoire>;
@@ -272,6 +276,20 @@ export const useApp = create<AppState>()(
         const cur = get().variantStats[mode] ?? { w: 0, d: 0, l: 0 };
         set({ variantStats: { ...get().variantStats, [mode]: { ...cur, [outcome]: cur[outcome] + 1 } } });
         get().logActivity('games');
+      },
+      repTrain: {},
+      learnRepMoves: (oid, keys) => {
+        const now = Date.now();
+        const cur = { ...(get().repTrain[oid] ?? {}) };
+        // Just learned: first review a few hours later (practising straight away still works).
+        for (const k of keys) if (!cur[k]) cur[k] = { ...newCardState(now), due: now + 4 * 60 * 60 * 1000, history: [{ t: now, g: 'good' }], last: now };
+        set({ repTrain: { ...get().repTrain, [oid]: cur } });
+      },
+      gradeRepMove: (oid, key, grade) => {
+        const now = Date.now();
+        const cur = { ...(get().repTrain[oid] ?? {}) };
+        cur[key] = schedule(cur[key] ?? newCardState(now), grade, now);
+        set({ repTrain: { ...get().repTrain, [oid]: cur } });
       },
       drills: {},
       recordDrill: (id, passed, moves, grade) => {
@@ -429,13 +447,14 @@ export const useApp = create<AppState>()(
           program: data.program ?? null,
           vision: data.vision ?? {},
           drills: data.drills ?? {},
+          repTrain: data.repTrain ?? {},
           variantStats: data.variantStats ?? {},
           customReps: data.customReps ?? {},
           scouts: data.scouts ?? {},
           quiz: data.quiz ?? { best: {}, rounds: 0, history: [] },
         }),
       resetAll: () =>
-        set({ settings: defaultSettings, games: [], cards: {}, lessons: {}, repertoire: {}, activity: {}, plan: null, puzzles: defaultPuzzleStats, classics: {}, program: null, quiz: { best: {}, rounds: 0, history: [] }, vision: {}, drills: {}, variantStats: {}, customReps: {}, scouts: {} }),
+        set({ settings: defaultSettings, games: [], cards: {}, lessons: {}, repertoire: {}, activity: {}, plan: null, puzzles: defaultPuzzleStats, classics: {}, program: null, quiz: { best: {}, rounds: 0, history: [] }, vision: {}, drills: {}, repTrain: {}, variantStats: {}, customReps: {}, scouts: {} }),
     }),
     {
       name: 'outpost-state-v1',
@@ -454,6 +473,7 @@ export const useApp = create<AppState>()(
         quiz: s.quiz,
         vision: s.vision,
         drills: s.drills,
+        repTrain: s.repTrain,
         variantStats: s.variantStats,
         customReps: s.customReps,
         scouts: s.scouts,

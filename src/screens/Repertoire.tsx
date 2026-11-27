@@ -1,3 +1,5 @@
+import { repToOpening } from '../lib/repertoire';
+import { RepTrainPanel } from './RepTrainer';
 import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, ArrowRight, BookOpen, Check, ChevronLeft, ChevronsLeft, Plus, Repeat, Sparkles, Swords, Trash2, Wand2 } from 'lucide-react';
 import { Chess, uid, pvToSan, type Color, type PieceSymbol, type Square } from '../lib/chess/core';
@@ -229,6 +231,7 @@ function Builder({ rep }: { rep: Repertoire }) {
         </div>
 
         <div className="side-col">
+          <RepTrainPanel opening={repToOpening(rep)} side={rep.side} />
           <div className="tabs" role="tablist">
             <button role="tab" className={`tab${tab === 'coach' ? ' is-on' : ''}`} aria-selected={tab === 'coach'} onClick={() => setTab('coach')}>Coach</button>
             <button role="tab" className={`tab${tab === 'lines' ? ' is-on' : ''}`} aria-selected={tab === 'lines'} onClick={() => setTab('lines')}>Lines ({lines.length})</button>

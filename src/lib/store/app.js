@@ -97,6 +97,22 @@ export const useApp = create()(persist((set, get) => ({
         set({ variantStats: { ...get().variantStats, [mode]: { ...cur, [outcome]: cur[outcome] + 1 } } });
         get().logActivity('games');
     },
+    repTrain: {},
+    learnRepMoves: (oid, keys) => {
+        const now = Date.now();
+        const cur = { ...(get().repTrain[oid] ?? {}) };
+        // Just learned: first review a few hours later (practising straight away still works).
+        for (const k of keys)
+            if (!cur[k])
+                cur[k] = { ...newCardState(now), due: now + 4 * 60 * 60 * 1000, history: [{ t: now, g: 'good' }], last: now };
+        set({ repTrain: { ...get().repTrain, [oid]: cur } });
+    },
+    gradeRepMove: (oid, key, grade) => {
+        const now = Date.now();
+        const cur = { ...(get().repTrain[oid] ?? {}) };
+        cur[key] = schedule(cur[key] ?? newCardState(now), grade, now);
+        set({ repTrain: { ...get().repTrain, [oid]: cur } });
+    },
     drills: {},
     recordDrill: (id, passed, moves, grade) => {
         const cur = get().drills[id] ?? { passed: false, attempts: 0 };
@@ -263,12 +279,13 @@ export const useApp = create()(persist((set, get) => ({
         program: data.program ?? null,
         vision: data.vision ?? {},
         drills: data.drills ?? {},
+        repTrain: data.repTrain ?? {},
         variantStats: data.variantStats ?? {},
         customReps: data.customReps ?? {},
         scouts: data.scouts ?? {},
         quiz: data.quiz ?? { best: {}, rounds: 0, history: [] },
     }),
-    resetAll: () => set({ settings: defaultSettings, games: [], cards: {}, lessons: {}, repertoire: {}, activity: {}, plan: null, puzzles: defaultPuzzleStats, classics: {}, program: null, quiz: { best: {}, rounds: 0, history: [] }, vision: {}, drills: {}, variantStats: {}, customReps: {}, scouts: {} }),
+    resetAll: () => set({ settings: defaultSettings, games: [], cards: {}, lessons: {}, repertoire: {}, activity: {}, plan: null, puzzles: defaultPuzzleStats, classics: {}, program: null, quiz: { best: {}, rounds: 0, history: [] }, vision: {}, drills: {}, repTrain: {}, variantStats: {}, customReps: {}, scouts: {} }),
 }), {
     name: 'outpost-state-v1',
     storage: createJSONStorage(() => idbStorage),
@@ -286,6 +303,7 @@ export const useApp = create()(persist((set, get) => ({
         quiz: s.quiz,
         vision: s.vision,
         drills: s.drills,
+        repTrain: s.repTrain,
         variantStats: s.variantStats,
         customReps: s.customReps,
         scouts: s.scouts,

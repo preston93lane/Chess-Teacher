@@ -39,6 +39,8 @@ To rebuild the set, run `scripts/build-puzzles.py`.
 
 **Classic games.** 17 annotated immortal games. Replay them with commentary, or play the winner's side and find the key moves. Each opening also has a History tab with its namesake, how the theory evolved, and model games.
 
+**Train a repertoire in two phases.** Every library opening and every repertoire you build has a *Train it* panel. *Learn* takes three new lines at a time: your new moves are drawn and explained, and at each branch you're told which reply gets which answer. *Practise* then plays the opponent: either one line exactly, or the whole repertoire, where the opponent picks among the replies in your tree, leaning on the moves you're due to review. You play your moves from memory. Each of your moves has its own spaced-repetition schedule.
+
 **Opening quiz.** You see a position, name the opening (your repertoire, the library lines, all mainstream openings, or exact variations), then play the next theory move.
 
 **Training programs.** Four regimens of 4–8 weeks: all-round, tactics bootcamp, repertoire builder and positional mastery. You choose days per week and minutes per day.

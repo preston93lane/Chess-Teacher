@@ -126,3 +126,19 @@ describe('follow-up annotation', () => {
     expect(plies[0].note.length).toBeGreaterThan(0);
   });
 });
+
+describe('repertoire trainer', () => {
+  it('merges lines into a tree and only picks replies from it', async () => {
+    const { buildTree, pickReply, myKeys, summary } = await import('./repTrainer');
+    const { getOpening } = await import('./openings/book');
+    const o = getOpening('london')!;
+    const { tree, lines } = buildTree(o);
+    expect(lines.length).toBe(o.lines.length);
+    const firstMoves = tree.get('')!.children;
+    expect(firstMoves).toEqual(['d4']);
+    const replies = tree.get('d4')!.children;
+    for (let i = 0; i < 20; i++) expect(replies).toContain(pickReply(tree, ['d4'], 'w', {}, false));
+    expect(myKeys(['d4', 'd5', 'Bf4'], 'w')).toEqual(['d4', 'd4 d5 Bf4']);
+    expect(summary(lines, 'w', {}).learnedLines).toBe(0);
+  });
+});

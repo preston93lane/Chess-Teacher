@@ -733,3 +733,16 @@
   display: inline-flex; align-items: center; gap: 4px; border: 0; border-radius: 999px; padding: 8px 10px 8px 14px;
   background: color-mix(in srgb, #68d68a 18%, transparent); color: #68d68a; font: inherit; font-size: 14px; font-weight: 700;
 }
+/* ---------- Repertoire trainer ---------- */
+.reptrain-moves { font-size: 15px; line-height: 1.7; }
+.reptrain-moves .is-mine { font-weight: 800; }
+.reptrain-branch { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: var(--radius); background: var(--surface-2); }
+.reptrain-branch svg { flex: none; margin-top: 3px; color: var(--t-book); }
+.reptrain-teach { padding: 12px 14px; border-radius: var(--radius); border-left: 3px solid #68d68a; background: color-mix(in srgb, #68d68a 10%, transparent); display: grid; gap: 6px; }
+.reptrain-kicker { font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #68d68a; }
+.reptrain-wrong { padding: 12px 14px; border-radius: var(--radius); border-left: 3px solid var(--t-mistake); background: color-mix(in srgb, var(--t-mistake) 10%, transparent); display: grid; gap: 6px; }
+.reptrain-panel { margin-bottom: 14px; }
+.reptrain-step { display: flex; gap: 12px; align-items: flex-start; text-align: left; width: 100%; padding: 12px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface-2); color: var(--text); font: inherit; }
+.reptrain-step:disabled { opacity: .5; }
+.reptrain-num { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--primary); color: var(--primary-ink); font-weight: 900; }
+.row-between { display: flex; justify-content: space-between; align-items: center; gap: 8px; }

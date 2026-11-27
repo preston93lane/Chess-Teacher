@@ -694,3 +694,19 @@
 .trainer-card.is-featured svg { color: var(--primary-ink); }
 .trainer-card.is-featured .muted { color: color-mix(in srgb, var(--primary-ink) 70%, transparent); }
 .vis-line { font-size: 20px; font-weight: 700; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--surface-2); }
+
+/* ── Why it works (follow-up) ──────────────────────────────── */
+.followup { border: 1px solid color-mix(in srgb, var(--t-great) 35%, var(--line-soft)); }
+.followup-title { display: flex; align-items: center; gap: 6px; margin: 0; }
+.followup-title svg { color: var(--t-inaccuracy); }
+.followup-body { display: grid; grid-template-columns: minmax(0, 260px) 1fr; gap: 14px; align-items: start; }
+@media (max-width: 640px) { .followup-body { grid-template-columns: 1fr; } .followup-board { max-width: 300px; } }
+.followup-board .controls { margin-top: 4px; }
+.followup-line { display: flex; flex-wrap: wrap; gap: 2px 4px; margin: 0; }
+.followup-move { border: 0; background: none; padding: 2px 5px; border-radius: 6px; font-weight: 650; color: var(--muted); }
+.followup-move.is-on { background: var(--primary); color: var(--primary-ink); }
+.followup-note { margin: 8px 0 0; padding: 8px 10px; border-radius: var(--radius-sm); background: var(--surface-2); }
+.followup-alts h4 { margin: 4px 0 6px; }
+.followup-alt { display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: left; padding: 8px 10px; border-radius: var(--radius-sm); border: 1px solid var(--line-soft); background: var(--surface); margin-bottom: 6px; }
+.followup-alt.is-on { border-color: var(--primary); }
+.followup-bait { border-color: color-mix(in srgb, var(--t-blunder) 45%, var(--line-soft)); }

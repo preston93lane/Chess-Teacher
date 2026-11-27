@@ -7,6 +7,7 @@ import { lineScore, winPct } from '../lib/coach/eval';
 import { describeMove } from '../lib/coach/explain';
 import { soundForSan, playSound } from '../lib/sound';
 import type { PuzzleCard } from '../lib/store/app';
+import { FollowUpPanel } from './FollowUp';
 import { Board, type Arrow } from './Board';
 import { MoveList } from './MoveList';
 import { Button, Spinner } from './ui';
@@ -206,6 +207,7 @@ export function LineDrill({
 /** Find-the-better-move puzzle built from one of your own games. */
 export function PuzzleDrill({ card, onDone }: { card: PuzzleCard; onDone: (r: { solved: boolean; tries: number }) => void }) {
   const [fen, setFen] = useState(card.fen);
+  const [triedMoves, setTriedMoves] = useState<string[]>([]);
   const [tries, setTries] = useState(0);
   const [state, setState] = useState<'solving' | 'checking' | 'solved' | 'failed'>('solving');
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -227,6 +229,7 @@ export function PuzzleDrill({ card, onDone }: { card: PuzzleCard; onDone: (r: { 
 
   useEffect(() => {
     setFen(card.fen);
+    setTriedMoves([]);
     setTries(0);
     setState('solving');
     setFeedback(null);
@@ -249,6 +252,7 @@ export function PuzzleDrill({ card, onDone }: { card: PuzzleCard; onDone: (r: { 
       return;
     }
     const uci = uciOf(m);
+    if (uci !== best) setTriedMoves((x) => (x.includes(uci) ? x : [...x, uci]));
     soundForSan(m.san);
     setFen(c.fen());
     setLastMove([m.from, m.to]);
@@ -329,11 +333,8 @@ export function PuzzleDrill({ card, onDone }: { card: PuzzleCard; onDone: (r: { 
             <span>{feedback}</span>
           </div>
         )}
-        {(state === 'solved' || state === 'failed') && solutionSan.length > 1 && (
-          <div className="commentary">
-            <span className="commentary-move">Main line</span>
-            <p>{formatLine(card.fen, solutionSan)}</p>
-          </div>
+        {(state === 'solved' || state === 'failed') && (
+          <FollowUpPanel fen={card.fen} uci={best} line={card.solution} tried={[...new Set([card.played, ...triedMoves])].filter((u) => u && u !== best)} />
         )}
         {state === 'solving' && (
           <div className="row">

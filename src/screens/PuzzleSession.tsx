@@ -8,6 +8,7 @@ import { useApp } from '../lib/store/app';
 import { navigate, query, useRoute } from '../lib/router';
 import { Button, Header, Spinner } from '../components/ui';
 import { PuzzleSolver, solutionLine, type SolveResult } from '../components/PuzzleSolver';
+import { FollowUpPanel } from '../components/FollowUp';
 import { MoveBreakdown } from '../components/MoveBreakdown';
 import { usePuzzleDb } from './Puzzles';
 import { getOpening } from '../lib/openings/book';
@@ -178,6 +179,10 @@ export function PuzzleSession() {
               {(result.ok || showSolution) && <p className="muted small mt8">{solutionLine(puzzle)}</p>}
               {puzzle.opening && <p className="faint small mt8">From a game in the {getOpening(puzzle.opening)?.name}.</p>}
             </div>
+          )}
+
+          {result && (result.ok || showSolution) && (
+            <FollowUpPanel fen={start.fen} uci={puzzle.moves[1]} line={puzzle.moves.slice(1)} tried={result.wrong ? [result.wrong] : []} />
           )}
 
           <div className="row">

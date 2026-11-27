@@ -169,7 +169,7 @@ export const TRACKS: Track[] = [
     title: 'Endgames & conversion',
     summary: 'Turn advantages into wins and hold the draws you deserve.',
     level: 'Intermediate',
-    steps: [lesson('eg-basic-mates'), lesson('eg-opposition'), lesson('eg-pawn-majorities'), lesson('rook-endgames'), lesson('eg-queen-vs-pawn'), lesson('eg-fortress'), lesson('eg-two-bishops'), lesson('eg-bishop-knight'), lesson('bad-bishop'), lesson('minority-attack')],
+    steps: [lesson('eg-basic-mates'), lesson('eg-opposition'), lesson('eg-pawn-majorities'), lesson('rook-endgames'), lesson('eg-queen-vs-pawn'), lesson('eg-fortress'), lesson('eg-rook-endings-2'), lesson('eg-minor-pieces'), lesson('eg-pawn-races'), lesson('eg-two-bishops'), lesson('eg-bishop-knight'), lesson('bad-bishop'), lesson('minority-attack')],
   },
 ];
 

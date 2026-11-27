@@ -8,6 +8,7 @@ import { playSound, soundForSan } from '../lib/sound';
 import { Board } from '../components/Board';
 import { Button, Empty, Header, Section } from '../components/ui';
 import { MiniBoard } from '../components/MiniBoard';
+import { FollowUpPanel } from '../components/FollowUp';
 import { ALL_DRILLS, ENDGAME_CHAPTERS, chapterOf, getDrill, type EndgameDrill } from '../data/endgames';
 import { getLesson, LESSONS } from '../data/lessons';
 import { dueLabel } from '../lib/srs/scheduler';
@@ -126,7 +127,7 @@ function DrillRunner({ drill }: { drill: EndgameDrill }) {
   const [phase, setPhase] = useState<Phase>('play');
   const [message, setMessage] = useState('');
   const [hint, setHint] = useState(false);
-  const [better, setBetter] = useState<{ san: string; from: string; to: string } | null>(null);
+  const [better, setBetter] = useState<{ san: string; from: string; to: string; fen: string; uci: string; tried: string } | null>(null);
   const [held, setHeld] = useState(0);
   const recorded = useRef(false);
   const promoted = useRef(false);
@@ -282,13 +283,14 @@ function DrillRunner({ drill }: { drill: EndgameDrill }) {
     const h = g.history({ verbose: true });
     const mineIdx = [...h].reverse().findIndex((m) => m.color === side);
     if (mineIdx < 0) return;
-    const before = h[h.length - 1 - mineIdx].before;
+    const mineMove = h[h.length - 1 - mineIdx];
+    const before = mineMove.before;
     const res = await engine.analyze(before, { movetime: 1500, multipv: 1 }, undefined, true);
     const uci = res.lines[0]?.pv[0];
     if (!uci) return;
     const t = new Chess(before);
     const m = t.move({ from: uci.slice(0, 2) as Square, to: uci.slice(2, 4) as Square, promotion: (uci[4] as PieceSymbol) || undefined });
-    setBetter({ san: m.san, from: m.from, to: m.to });
+    setBetter({ san: m.san, from: m.from, to: m.to, fen: before, uci, tried: mineMove.from + mineMove.to + (mineMove.promotion ?? '') });
   };
 
   const goalLine =
@@ -361,6 +363,7 @@ function DrillRunner({ drill }: { drill: EndgameDrill }) {
               <h2>Not this time</h2>
               <p>{message}</p>
               {better && <p className="muted">Better was <strong className="num">{better.san}</strong> (green arrow).</p>}
+              {better && <FollowUpPanel fen={better.fen} uci={better.uci} tried={[better.tried]} title={`Why ${better.san} was better`} />}
               <div className="row">
                 <Button icon={<Undo2 size={16} />} onClick={takeBack}>Take back</Button>
                 {!better && <Button variant="secondary" onClick={showBetter}>Show a better move</Button>}

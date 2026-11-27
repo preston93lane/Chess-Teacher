@@ -3,12 +3,14 @@ import { ArrowLeft, ArrowRight, Check, Crosshair, Database, Eye, Swords } from '
 import { getLesson } from '../data/lessons';
 import type { LessonSection } from '../lib/lessons/types';
 import { Chess, type Color, type PieceSymbol, type Square } from '../lib/chess/core';
+import { uciOf } from '../lib/chess/core';
 import { parseMovetext } from '../lib/chess/pgn';
 import { useApp } from '../lib/store/app';
 import { navigate } from '../lib/router';
 import { engine } from '../lib/engine/stockfish';
 import { lineScore, winPct } from '../lib/coach/eval';
 import { soundForSan, playSound } from '../lib/sound';
+import { FollowUpPanel } from '../components/FollowUp';
 import { Board, type Arrow, type Mark } from '../components/Board';
 import { Button, Header, Spinner } from '../components/ui';
 import { BlockBanner, completeBlock, useBlockId } from '../components/BlockBanner';
@@ -95,6 +97,8 @@ function SectionView({ section, solved, onSolved }: { section: LessonSection; so
   const [message, setMessage] = useState<string | null>(null);
   const [tries, setTries] = useState(0);
   const [reveal, setReveal] = useState(false);
+  const [played, setPlayed] = useState<string | null>(null);
+  const [tried, setTried] = useState<string[]>([]);
   const turn = base.fen.split(' ')[1] as Color;
   const orientation = section.orientation ?? (section.task ? turn : section.practice?.side ?? 'w');
   const task = section.task;
@@ -124,6 +128,7 @@ function SectionView({ section, solved, onSolved }: { section: LessonSection; so
     const t = tries + 1;
     setTries(t);
     if (task.accept.includes(m.san)) {
+      setPlayed(uciOf(m));
       setState('right');
       playSound('good');
       setMessage(task.accept[0] === m.san ? task.explain : `${m.san} works. ${task.explain}`);
@@ -135,12 +140,14 @@ function SectionView({ section, solved, onSolved }: { section: LessonSection; so
       const [mine, top] = await Promise.all([engine.analyze(c.fen(), { depth: 12 }), engine.analyze(base.fen, { depth: 12 })]);
       const diff = winPct(lineScore(top.lines[0]), turn) - winPct(lineScore(mine.lines[0]), turn);
       if (diff <= 4) {
+        setPlayed(uciOf(m));
         setState('right');
         playSound('good');
         setMessage(`${m.san} is also a good move by engine standards. The lesson’s idea: ${task.accept[0]}. ${task.explain}`);
         onSolved();
       } else {
         setState('wrong');
+        setTried((x) => (x.includes(uciOf(m)) ? x : [...x, uciOf(m)]));
         playSound('bad');
         setMessage(t >= 2 ? `Not quite. ${task.hint ?? ''} The answer is shown on the board.` : `${m.san} misses the point. ${task.hint ?? 'Try again.'}`);
         if (t >= 2) setReveal(true);
@@ -164,6 +171,16 @@ function SectionView({ section, solved, onSolved }: { section: LessonSection; so
   }, [task, reveal, base.fen]);
 
   const showDiagramArrows = !task || state === 'right';
+  // The move to explain: yours if it was right, else the lesson's answer once shown.
+  const explainUci = useMemo(() => {
+    if (!task || (state !== 'right' && !reveal)) return null;
+    if (played) return played;
+    try {
+      return uciOf(new Chess(base.fen).move(task.accept[0]));
+    } catch {
+      return null;
+    }
+  }, [task, state, reveal, played, base.fen]);
   const marks: Mark[] = (section.marks ?? []).map((sq) => ({ sq, color: 'plan' }));
   const hasBoard = !!(section.pgn || section.fen);
 
@@ -201,6 +218,7 @@ function SectionView({ section, solved, onSolved }: { section: LessonSection; so
             )}
           </div>
         )}
+        {explainUci && <FollowUpPanel fen={base.fen} uci={explainUci} tried={tried} />}
         {section.practice && (
           <Button
             variant="secondary"

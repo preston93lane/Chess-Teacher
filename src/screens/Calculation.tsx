@@ -6,6 +6,7 @@ import { useApp } from '../lib/store/app';
 import { usePuzzleDb } from './Puzzles';
 import { playSound } from '../lib/sound';
 import { Board, type Arrow } from '../components/Board';
+import { FollowUpPanel } from '../components/FollowUp';
 import { Button, Header, Segmented, Spinner } from '../components/ui';
 
 const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
@@ -189,6 +190,8 @@ export function VisualizeTrainer() {
     return c.fen();
   }, [q]);
 
+  const answerUci = q && finalFen ? triedUci(finalFen, q.answer) : null;
+
   if (!db) return <div className="page"><Header title="Visualize the line" backTo="/courses/calculation" /><Spinner label="Loading positions…" /></div>;
 
   const choose = (o: string) => {
@@ -237,6 +240,7 @@ export function VisualizeTrainer() {
                   <Button icon={<ArrowRight size={16} />} onClick={fresh}>Next</Button>
                 </>
               )}
+              {answer && finalFen && answerUci && <FollowUpPanel fen={finalFen} uci={answerUci} tried={answer !== q.answer ? [triedUci(finalFen, answer)].filter(Boolean) as string[] : []} />}
               {!answer && (
                 <button className="link-btn" onPointerDown={() => setPeek(true)} onPointerUp={() => setPeek(false)} onPointerLeave={() => setPeek(false)}>
                   <Eye size={14} /> Hold to peek at the final position
@@ -250,3 +254,12 @@ export function VisualizeTrainer() {
   );
 }
 
+
+function triedUci(fen: string, san: string): string | null {
+  try {
+    const m = new Chess(fen).move(san);
+    return m.from + m.to + (m.promotion ?? '');
+  } catch {
+    return null;
+  }
+}

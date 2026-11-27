@@ -348,6 +348,137 @@ export const ENDGAME_LESSONS: Lesson[] = [
       },
     ],
   },
+  {
+    id: 'eg-rook-endings-2',
+    title: 'Rook endings II: cut-offs, Vancura, rook behind the pawn',
+    track: 'Endgames',
+    level: 'Advanced',
+    minutes: 14,
+    summary: 'Rook against pawn, the Vancura defence against a rook pawn, four against three on one side, and why rooks belong behind passed pawns.',
+    sections: [
+      {
+        title: 'Rook against pawn: the cut-off',
+        text: [
+          'A rook beats a lone pawn when the defending king can’t escort it. Here the rook on the e-file already cuts the Black king off from the e-file side, so it can’t get in front of the pawn’s path from there — your king simply walks over and the pawn falls.',
+          'The rule of thumb: count whether your king reaches the pawn before it queens, and keep the rook where it cuts the enemy king off.',
+        ],
+        fen: '8/8/8/3k4/3p4/8/1K6/4R3 w - - 0 1',
+        task: {
+          prompt: 'White to move and win.',
+          accept: ['Re8', 'Kc1', 'Kc2'],
+          hint: 'Keep the cut-off on the e-file and bring the king.',
+          explain: 'Re8 or a king move to c1/c2 wins: the e-file stays closed to the Black king, so it can’t support the pawn from the side, and White’s king arrives in time to win it.',
+        },
+        drill: 'rook-vs-pawn',
+      },
+      {
+        title: 'The Vancura defence',
+        text: [
+          'A rook pawn on the sixth with the attacking rook in front of it (Ra8, a6) looks dangerous, but it’s a draw if the defender attacks the pawn from the side — rook on the sixth rank — with the king near g7.',
+          'The side-on rook pins White’s rook to the pawn and checks the king away if it comes to help. Two traps: taking the pawn when White’s rook guards it (…Rxa6?? Rxa6) and letting the rook be cut off from the sixth rank.',
+        ],
+        fen: 'R7/6k1/P4r2/8/8/8/7K/8 b - - 0 1',
+        orientation: 'b',
+        task: {
+          prompt: 'Black to move: keep the draw.',
+          accept: ['Rg6', 'Re6', 'Rf3', 'Rf7', 'Kh7'],
+          hint: 'Stay on the side of the pawn; don’t take it while it’s guarded.',
+          explain: 'Moves like …Rg6 or …Re6 keep the rook on the sixth rank, attacking a6 from the side; if White’s king approaches, check it from the side. …Rxa6?? loses the rook to Rxa6.',
+        },
+        drill: 'vancura',
+      },
+      {
+        title: 'Four against three on one side',
+        text: [
+          'An extra pawn with all the pawns on one wing is usually a draw in a rook ending. The defender keeps the pawns on the dark/light squares where they can’t be attacked easily, stays active with the rook, and avoids trading into a lost king-and-pawn ending.',
+        ],
+        fen: '3r2k1/5ppp/8/8/8/4P2P/2R2PP1/6K1 b - - 0 1',
+        orientation: 'b',
+        drill: 'four-vs-three',
+      },
+      {
+        title: 'Rooks belong behind passed pawns',
+        text: [
+          'Tarrasch’s rule: a rook behind a passed pawn gains activity as the pawn advances; a rook in front of it (here Black’s on a7) becomes more and more passive. With the enemy rook tied to the a-pawn, White’s king walks into the kingside and wins pawns there.',
+        ],
+        fen: '8/r4pk1/P5p1/7p/7P/6P1/5PK1/R7 w - - 0 1',
+        drill: 'rook-behind',
+      },
+    ],
+  },
+  {
+    id: 'eg-minor-pieces',
+    title: 'Minor pieces: bishops, fortresses and the rook against a minor piece',
+    track: 'Endgames',
+    level: 'Advanced',
+    minutes: 12,
+    summary: 'The right and wrong bishop, the opposite-coloured bishop fortress, and how to hold rook against bishop or knight.',
+    sections: [
+      {
+        title: 'The right bishop',
+        text: ['With a bishop that controls the queening square (here h8 is dark, like the bishop), the rook pawn wins: the defending king can be driven out of the corner. Compare the wrong-bishop fortress in the previous chapter.'],
+        fen: '7k/8/8/5K1P/8/8/8/2B5 w - - 0 1',
+        task: {
+          prompt: 'White to move and win.',
+          accept: ['Kg6', 'h6', 'Kf6'],
+          hint: 'Take the g-file squares from the king and use the bishop to cover the corner.',
+          explain: 'Kg6 (fastest), h6 or Kf6 all lead to mate: the bishop takes away g7 and h8 at the right moment, the pawn advances and the king is mated or the pawn queens.',
+        },
+        drill: 'right-bishop',
+      },
+      {
+        title: 'Opposite-coloured bishops: the fortress',
+        text: [
+          'With bishops of opposite colours, even two extra pawns often don’t win. The defender blockades with the king on one pawn and the bishop on the other’s path — on squares the attacking bishop can never challenge.',
+          'Here Black’s king holds f6 and the bishop sits on the dark diagonal stopping e4–e5. White can shuffle for ever.',
+        ],
+        fen: '8/8/5k2/4bP2/4P3/3K4/4B3/8 b - - 0 1',
+        orientation: 'b',
+        drill: 'ocb-fortress',
+      },
+      {
+        title: 'Rook against bishop',
+        text: [
+          'Rook against bishop is usually a draw. The defending king heads for the corner the bishop does not control (here h8, a dark corner, with a light-squared bishop): checks along the back rank can be blocked by the bishop, and stalemate tricks appear. In the other corner the defence is much harder.',
+        ],
+        fen: '7k/8/6K1/8/2b5/8/8/R7 b - - 0 1',
+        orientation: 'b',
+        drill: 'r-vs-b',
+      },
+      {
+        title: 'Rook against knight',
+        text: ['Also a draw with correct play — as long as the knight stays next to its king. A knight that wanders away gets cut off and trapped.'],
+        fen: '8/8/8/4k3/4n3/8/8/R3K3 b - - 0 1',
+        orientation: 'b',
+        drill: 'r-vs-n',
+      },
+    ],
+  },
+  {
+    id: 'eg-pawn-races',
+    title: 'Pawn races: who queens with tempo',
+    track: 'Endgames',
+    level: 'Intermediate',
+    minutes: 6,
+    summary: 'When both sides queen, the first new queen can sometimes win the other straight away. Count the moves, then look at the geometry.',
+    sections: [
+      {
+        title: 'Queen first, then win the other queen',
+        text: [
+          'Both pawns run. White queens first — on a8, on the same long diagonal as h1 where Black will queen. So Black’s new queen would be lost at once, and White wins.',
+          'In any race, count the moves to queen, then ask: does my new queen check, or attack the square where theirs appears?',
+        ],
+        fen: '8/8/P7/4k3/8/4K2p/8/8 w - - 0 1',
+        task: {
+          prompt: 'White to move and win.',
+          accept: ['a7', 'Kf2', 'Kf3'],
+          hint: 'Count: who queens first, and where?',
+          explain: '1.a7 h2 2.a8=Q h1=Q 3.Qxh1 — the a8-queen controls the long diagonal. Stopping the pawn with the king (Kf2/Kf3) also wins, but the race is quicker.',
+        },
+        drill: 'race',
+      },
+    ],
+  },
 ];
 
 export const ENDGAME_CHAPTERS: EndgameChapter[] = [
@@ -406,6 +537,31 @@ export const ENDGAME_CHAPTERS: EndgameChapter[] = [
     drills: [
       { id: 'lucena', title: 'Lucena: build a bridge', fen: '1K6/1P1k4/8/8/8/8/r7/2R5 w - - 0 1', side: 'w', goal: 'win', holdAbove: 0.35, task: 'Queen the b-pawn.', hint: 'Cut the king off with a check, bring your rook to the fourth rank, then walk your king out.', idea: 'The bridge: the rook on the fourth rank blocks the checks.' },
       { id: 'philidor', title: 'Philidor: third-rank defence', fen: '4k3/8/r7/4PK2/8/8/8/1R6 b - - 0 1', side: 'b', goal: 'draw', survive: 20, holdAbove: -2.5, task: 'Black to move: hold the draw.', hint: 'Rook on the sixth rank until the pawn advances; then check from behind.', idea: 'Third rank first, checks from behind once the pawn steps forward.' },
+    ],
+  },
+  {
+    id: 'rook2',
+    title: 'Rook endings II',
+    blurb: 'Rook against pawn, the Vancura, four against three, and the rook behind the passed pawn.',
+    lessons: ['eg-rook-endings-2'],
+    drills: [
+      { id: 'rook-vs-pawn', title: 'Rook against pawn', fen: '8/8/8/3k4/3p4/8/1K6/4R3 w - - 0 1', side: 'w', goal: 'win', holdAbove: 0.35, task: 'Win the pawn.', hint: 'Keep the Black king cut off along the e-file and bring your king.', idea: 'Cut the king off, bring your own: the rook wins against a pawn the king can’t escort.' },
+      { id: 'vancura', title: 'The Vancura', fen: 'R7/6k1/P4r2/8/8/8/7K/8 b - - 0 1', side: 'b', goal: 'draw', survive: 20, holdAbove: -2.5, task: 'Hold the draw against the a-pawn.', hint: 'Rook on the sixth rank attacking a6 from the side; check the king if it comes close. Don’t take the pawn while it’s guarded.', idea: 'The side-on rook pins White’s rook to the pawn: the Vancura draw.' },
+      { id: 'four-vs-three', title: 'Four against three', fen: '3r2k1/5ppp/8/8/8/4P2P/2R2PP1/6K1 b - - 0 1', side: 'b', goal: 'draw', survive: 20, holdAbove: -2.5, task: 'A pawn down, all on one side. Draw.', hint: 'Keep your rook active and your pawns compact; don’t trade into a lost pawn ending.', idea: 'An extra pawn on the same wing rarely wins a rook ending.' },
+      { id: 'rook-behind', title: 'Rook behind the passer', fen: '8/r4pk1/P5p1/7p/7P/6P1/5PK1/R7 w - - 0 1', side: 'w', goal: 'win', holdAbove: 0.35, task: 'Convert the a-pawn.', hint: 'Black’s rook is tied to the pawn. March your king to the kingside pawns.', idea: 'Tarrasch’s rule: the rook behind the passer grows stronger, the rook in front grows weaker.' },
+    ],
+  },
+  {
+    id: 'minor',
+    title: 'Minor pieces',
+    blurb: 'The right bishop, the opposite-coloured fortress, and holding a rook with a bishop or a knight.',
+    lessons: ['eg-minor-pieces', 'eg-pawn-races'],
+    drills: [
+      { id: 'right-bishop', title: 'The right bishop', fen: '7k/8/8/5K1P/8/8/8/2B5 w - - 0 1', side: 'w', goal: 'mate', task: 'Win with bishop and rook pawn.', hint: 'Your bishop controls h8: drive the king out with king and bishop, then push.', idea: 'Right-coloured bishop: the corner can’t hold.' },
+      { id: 'ocb-fortress', title: 'Opposite bishops fortress', fen: '8/8/5k2/4bP2/4P3/3K4/4B3/8 b - - 0 1', side: 'b', goal: 'draw', survive: 20, holdAbove: -2.5, task: 'Two pawns down. Hold the fortress.', hint: 'King blocks f6/f7, bishop guards the e5 square on the dark diagonal. Don’t let the pawns get connected with support.', idea: 'Opposite-coloured bishops: blockade on your bishop’s colour.' },
+      { id: 'r-vs-b', title: 'Rook against bishop', fen: '7k/8/6K1/8/2b5/8/8/R7 b - - 0 1', side: 'b', goal: 'draw', survive: 20, holdAbove: -4, task: 'Hold with the bishop.', hint: 'Stay in the corner the bishop doesn’t control; block back-rank checks with the bishop.', idea: 'The safe corner: opposite colour to your bishop.' },
+      { id: 'r-vs-n', title: 'Rook against knight', fen: '8/8/8/4k3/4n3/8/8/R3K3 b - - 0 1', side: 'b', goal: 'draw', survive: 20, holdAbove: -4, task: 'Hold with the knight.', hint: 'Keep the knight next to your king.', idea: 'A knight beside its king can’t be trapped.' },
+      { id: 'race', title: 'Pawn race', fen: '8/8/P7/4k3/8/4K2p/8/8 w - - 0 1', side: 'w', goal: 'win', holdAbove: 0.35, task: 'Win the race.', hint: 'Count the moves — and look at the long diagonal.', idea: 'Queen first on the long diagonal: the other queen falls the moment it appears.' },
     ],
   },
 ];

@@ -8,6 +8,7 @@ import { explorerMeta, getMasterGame, loadExplorer, type MasterGame } from '../l
 import { useApp } from '../lib/store/app';
 import { playSound, soundForSan } from '../lib/sound';
 import { Board, type Arrow } from '../components/Board';
+import { FollowUpPanel } from '../components/FollowUp';
 import { Button, Header, Spinner } from '../components/ui';
 
 /** Score in pawns for `side` (mate = ±20). */
@@ -92,6 +93,7 @@ export function ThreatSpotter() {
   const [checking, setChecking] = useState(false);
   const [score, setScore] = useState({ threats: 0, defences: 0, n: 0 });
   const [arrows, setArrows] = useState<Arrow[]>([]);
+  const [defence, setDefence] = useState<{ uci: string; tried?: string } | null>(null);
   const nextQ = useRef<Promise<ThreatQ | null> | null>(null);
 
   const load = useCallback(async () => {
@@ -99,6 +101,7 @@ export function ThreatSpotter() {
     setStage('threat');
     setMsg(null);
     setArrows([]);
+    setDefence(null);
     const p = nextQ.current ?? makeThreat();
     nextQ.current = null;
     const got = await p;
@@ -169,6 +172,8 @@ export function ThreatSpotter() {
     if (best.best) setArrows((a) => [...a, { from: best.best!.slice(0, 2), to: best.best!.slice(2, 4), color: 'g' }]);
     setMsg(ok ? `${san} holds${bestSan && bestSan !== san ? ` (the engine’s choice: ${bestSan})` : ''}. That’s the habit: threat first, then your move.` : `${san} doesn’t stop it — it costs about ${loss.toFixed(1)} pawns. Better was ${bestSan} (green arrow).`);
     setScore((s) => ({ ...s, defences: s.defences + (ok ? 1 : 0), n: s.n + 1 }));
+    const myUci = m.from + m.to + (m.promotion ?? '');
+    if (best.best) setDefence({ uci: ok ? myUci : best.best, tried: ok ? undefined : myUci });
     setStage('done');
     logActivity('puzzles');
   };
@@ -197,6 +202,7 @@ export function ThreatSpotter() {
             {checking && <Spinner label="Checking…" />}
             {msg && <p>{msg}</p>}
             {stage === 'done' && <Button icon={<ArrowRight size={16} />} onClick={load}>Next position</Button>}
+            {stage === 'done' && defence && <FollowUpPanel fen={q.fen} uci={defence.uci} tried={defence.tried ? [defence.tried] : []} title="How the defence works" />}
           </div>
           {score.n > 0 && <p className="muted small">Threats spotted {score.threats}/{score.n} · held {score.defences}/{score.n}</p>}
         </div>
@@ -214,7 +220,7 @@ export function GuessTheMove() {
   const [game, setGame] = useState<MasterGame | null>(null);
   const [side, setSide] = useState<Color>('w');
   const [ply, setPly] = useState(0);
-  const [guesses, setGuesses] = useState<{ ply: number; mine: string; master: string; pts: number }[]>([]);
+  const [guesses, setGuesses] = useState<{ ply: number; mine: string; master: string; pts: number; mineUci?: string }[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
   const [revealed, setRevealed] = useState(false);
@@ -250,6 +256,13 @@ export function GuessTheMove() {
   const fen = c.fen();
   const master = game.moves[ply];
   const finished = guesses.length >= MAX || ply >= game.moves.length;
+  let masterUci: string | null = null;
+  try {
+    const mm = master ? new Chess(fen).move(master) : null;
+    masterUci = mm ? mm.from + mm.to + (mm.promotion ?? '') : null;
+  } catch {
+    masterUci = null;
+  }
   const total = guesses.reduce((a, g) => a + g.pts, 0);
   const player = side === 'w' ? game.white : game.black;
 
@@ -279,7 +292,7 @@ export function GuessTheMove() {
       text = `${player} played ${master}. Your ${san} is ${pts === 2 ? 'just as good by the engine — +2' : pts === 1 ? `a little weaker (−${diff.toFixed(1)}) — +1` : `clearly worse (−${diff.toFixed(1)}) — no points`}.`;
     }
     playSound(pts >= 2 ? 'good' : pts === 1 ? 'move' : 'bad');
-    setGuesses((g) => [...g, { ply, mine: san, master, pts }]);
+    setGuesses((g) => [...g, { ply, mine: san, master, pts, mineUci: m.from + m.to + (m.promotion ?? '') }]);
     setMsg(text);
     setRevealed(true);
     logActivity('puzzles');
@@ -314,6 +327,9 @@ export function GuessTheMove() {
                 {checking && <Spinner label="Comparing with the engine…" />}
                 {msg && <p>{msg}</p>}
                 {revealed && <Button icon={<ArrowRight size={16} />} onClick={advance}>Continue</Button>}
+                {revealed && masterUci && (
+                  <FollowUpPanel fen={fen} uci={masterUci} tried={guesses[guesses.length - 1]?.mine !== master && guesses[guesses.length - 1]?.mineUci ? [guesses[guesses.length - 1].mineUci!] : []} title={`Why ${player} played ${master}`} />
+                )}
               </>
             )}
             <p className="num muted small">Score {total} · exact 3, as good 2, close 1</p>

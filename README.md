@@ -60,13 +60,14 @@ To rebuild the set, run `scripts/build-puzzles.py`.
 - Guess the master's move: play through a top game as the winner, with points for exact matches and engine-graded partial credit.
 - Endgame technique and practical endgames.
 
-**Endgame course.** Seven technique lessons and 17 drills against a full-strength engine that defends (or attacks) as well as it can:
+**Endgame course.** Ten technique lessons and 26 drills against a full-strength engine that defends (or attacks) as well as it can:
 
 - Basic mates: queen, rook, two bishops, and bishop and knight (the final net, getting out of the wrong corner, and the whole mate from the centre). Mate before the 50-move rule.
 - King and pawn: the rule of the square, Réti's study, key squares and the opposition.
 - Unbalanced pawns: the outside passed pawn, the breakthrough, the protected passer, and healthy against crippled majorities (the Exchange Ruy Lopez ending).
 - Queen against a pawn on the seventh (the staircase win, and the stalemate defence with bishop and rook pawns), and fortresses with rook pawns and the wrong bishop.
-- Rook endings: Lucena and Philidor.
+- Rook endings: Lucena and Philidor; rook against pawn, the Vancura defence, four against three on one side, and the rook behind the passed pawn.
+- Minor pieces: the right bishop with a rook pawn, the opposite-coloured bishop fortress, rook against bishop and rook against knight, and pawn races where the first queen wins the second.
 
 Drills you pass come back on a spaced-repetition schedule, in Today's session and on the course page. A drill is passed by reaching its goal: checkmate, promoting safely, or holding the draw for a set number of moves. If a move throws the result away, the engine confirms it with a deeper search, then offers a takeback and a better move. Every position and claim is checked with `scripts/validate-endgames.ts`.
 
@@ -99,6 +100,8 @@ Drills you pass come back on a spaced-repetition schedule, in Today's session an
 - **Play it** starts a game where the bot follows theory from that opening until it runs out. If you leave the book, the coach tells you what theory recommends.
 
 **Games and analysis.** Import games from PGN (paste or file), Lichess or Chess.com — or link your usernames in Settings and new games sync automatically when the app opens. The coach review grades every move, works out accuracy per side and per phase, finds the key moments and writes a short summary. Critical verdicts are re-checked with a deeper search before they are shown. You can explore variations and get a coach comment on any move you try. After a review, *Retry your mistakes* replays each position where you went wrong. On a phone, previous/next buttons sit in the right-thumb zone.
+
+**Why it works.** After you solve a lesson task, a puzzle, a review-deck position or a retry — or when the answer is shown — the coach plays out the follow-up on a small board: the opponent's best defence, a note on every move, what the move threatens and what it wins. It also shows the tempting reply that loses ("if they take the bait") and why the moves you tried, and the next-best alternative, are worse. The same panel explains the better move after a failed endgame drill, the master's move in Guess the move, the defence in the threat spotter and the answer in Visualize the line.
 
 **Your games become lessons.** After a review, each of your mistakes becomes a "find the better move" position in your review deck. You can save any position from the analysis board, or play on from it against the bot.
 

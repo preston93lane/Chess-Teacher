@@ -114,3 +114,15 @@ describe('opening traps', () => {
     }
   });
 });
+
+describe('follow-up annotation', () => {
+  it('walks a line and notes each move', async () => {
+    const { annotateLine } = await import('./coach/followup');
+    // Légal: after 5...Bxd1, 6.Bxf7+ Ke7 7.Nd5#
+    const fen = 'rn1qkbnr/ppp2p1p/3p2p1/4N3/2B1P3/2N5/PPPP1PPP/R1BbK2R w KQkq - 0 6';
+    const plies = annotateLine(fen, ['c4f7', 'e8e7', 'c3d5']);
+    expect(plies.map((p) => p.san)).toEqual(['Bxf7+', 'Ke7', 'Nd5#']);
+    expect(plies[2].note).toBe('Checkmate.');
+    expect(plies[0].note.length).toBeGreaterThan(0);
+  });
+});

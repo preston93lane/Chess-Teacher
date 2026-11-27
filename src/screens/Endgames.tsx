@@ -6,7 +6,7 @@ import { useApp, dueDrills } from '../lib/store/app';
 import { currentPath, navigate, query } from '../lib/router';
 import { playSound, soundForSan } from '../lib/sound';
 import { Board } from '../components/Board';
-import { Button, Empty, Header, Section } from '../components/ui';
+import { Button, Empty, Header, Section, NextDock } from '../components/ui';
 import { MiniBoard } from '../components/MiniBoard';
 import { FollowUpPanel } from '../components/FollowUp';
 import { ALL_DRILLS, ENDGAME_CHAPTERS, chapterOf, getDrill, type EndgameDrill } from '../data/endgames';
@@ -342,7 +342,7 @@ function DrillRunner({ drill }: { drill: EndgameDrill }) {
               <p className="muted">{drill.idea}</p>
               {stat?.bestMoves !== undefined && drill.goal !== 'draw' && <p className="faint small num">Your best: {stat.bestMoves} moves</p>}
               <div className="row">
-                {reviewMode ? (
+                <NextDock>{reviewMode ? (
                   dueList.length ? (
                     <Button icon={<ArrowRight size={16} />} onClick={() => navigate(`/endgames/${dueList[0]}?review=1`)}>Next review ({dueList.length} left)</Button>
                   ) : (
@@ -352,7 +352,7 @@ function DrillRunner({ drill }: { drill: EndgameDrill }) {
                   <Button icon={<ArrowRight size={16} />} onClick={() => navigate(`/endgames/${nextDrill.id}`)}>Next: {nextDrill.title}</Button>
                 ) : (
                   <Button onClick={() => navigate('/endgames')}>Back to the course</Button>
-                )}
+                )}</NextDock>
                 <Button variant="secondary" icon={<RotateCcw size={16} />} onClick={restart}>Again</Button>
               </div>
             </div>

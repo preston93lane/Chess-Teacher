@@ -6,7 +6,7 @@ import { describeMove } from '../lib/coach/explain';
 import { lineOutcome, materialPhrase } from '../lib/coach/tactics';
 import { useApp } from '../lib/store/app';
 import { navigate, query, useRoute } from '../lib/router';
-import { Button, Header, Spinner } from '../components/ui';
+import { Button, Header, Spinner, NextDock } from '../components/ui';
 import { PuzzleSolver, solutionLine, type SolveResult } from '../components/PuzzleSolver';
 import { FollowUpPanel } from '../components/FollowUp';
 import { MoveBreakdown } from '../components/MoveBreakdown';
@@ -203,7 +203,7 @@ export function PuzzleSession() {
               </Button>
             )}
             {result && mode !== 'daily' && (
-              <Button icon={<ArrowRight size={16} />} onClick={next}>Next puzzle</Button>
+              <NextDock><Button icon={<ArrowRight size={16} />} onClick={next}>Next puzzle</Button></NextDock>
             )}
             {result && mode === 'daily' && (
               <Button onClick={() => { toast('See you tomorrow.'); navigate('/puzzles'); }}>Done</Button>

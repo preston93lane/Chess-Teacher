@@ -710,3 +710,13 @@
 .followup-alt { display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: left; padding: 8px 10px; border-radius: var(--radius-sm); border: 1px solid var(--line-soft); background: var(--surface); margin-bottom: 6px; }
 .followup-alt.is-on { border-color: var(--primary); }
 .followup-bait { border-color: color-mix(in srgb, var(--t-blunder) 45%, var(--line-soft)); }
+.next-dock {
+  position: fixed; right: 16px; bottom: calc(var(--nav-h) + var(--safe-b) + 12px); z-index: 40;
+  display: flex; gap: 8px; align-items: center;
+  padding: 6px; border-radius: var(--radius-lg); background: color-mix(in srgb, var(--surface-2) 92%, transparent);
+  border: 1px solid var(--line); box-shadow: var(--shadow); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  max-width: calc(100vw - 32px); animation: dock-in .18s ease-out;
+}
+.next-dock-spacer { height: 72px; }
+@keyframes dock-in { from { transform: translateY(12px); opacity: 0; } }
+@media (min-width: 900px) { .next-dock { bottom: 20px; right: 24px; } }

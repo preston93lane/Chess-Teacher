@@ -6,7 +6,7 @@ import { allTraps, type Trap } from '../data/traps';
 import { useApp } from '../lib/store/app';
 import { playSound, soundForSan } from '../lib/sound';
 import { Board, type Arrow } from '../components/Board';
-import { Button, Header } from '../components/ui';
+import { Button, Header, NextDock } from '../components/ui';
 
 export function TrapTrainer() {
   const traps = useMemo(() => allTraps().sort(() => Math.random() - 0.5), []);
@@ -98,7 +98,7 @@ function TrapRound({ t, total, score, onResult, onNext }: { t: Trap; total: numb
               <>
                 <p className="drill-prompt">{t.key}{t.key.endsWith('#') ? '' : '!'} {stage === 'done' ? '' : 'Watch how it ends…'}</p>
                 {stage === 'done' && <p>{t.text}</p>}
-                {stage === 'done' && <Button icon={<ArrowRight size={16} />} onClick={onNext}>Next trap</Button>}
+                {stage === 'done' && <NextDock><Button icon={<ArrowRight size={16} />} onClick={onNext}>Next trap</Button></NextDock>}
               </>
             )}
           </div>

@@ -7,7 +7,7 @@ import { CLASS_INFO, type MoveReview } from '../lib/coach/explain';
 import { navigate } from '../lib/router';
 import { PuzzleDrill } from '../components/Trainers';
 import { newCardState } from '../lib/srs/scheduler';
-import { Button, Empty, Header, Spinner } from '../components/ui';
+import { Button, Empty, Header, Spinner, NextDock } from '../components/ui';
 
 function uciLine(fen: string, sans: string[]): string[] {
   const c = new Chess(fen);
@@ -132,11 +132,11 @@ export function RetryMistakes({ gameId }: { gameId: string }) {
         }}
       />
       {answered && (
-        <div className="sticky-cta">
-          <Button size="lg" className="btn-block" icon={results[index] ? <Check size={18} /> : <ArrowRight size={18} />} onClick={next}>
+        <NextDock>
+          <Button size="lg" icon={results[index] ? <Check size={18} /> : <ArrowRight size={18} />} onClick={next}>
             {index + 1 < cards.length ? 'Next mistake' : 'See results'}
           </Button>
-        </div>
+        </NextDock>
       )}
     </div>
   );

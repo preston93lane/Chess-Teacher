@@ -7,7 +7,7 @@ import { usePuzzleDb } from './Puzzles';
 import { playSound } from '../lib/sound';
 import { Board, type Arrow } from '../components/Board';
 import { FollowUpPanel } from '../components/FollowUp';
-import { Button, Header, Segmented, Spinner } from '../components/ui';
+import { Button, Header, Segmented, Spinner, NextDock } from '../components/ui';
 
 const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
 
@@ -108,7 +108,7 @@ export function CctTrainer() {
                 <p className={found.length === q.forcing.length ? 'tone-text-best' : 'muted'}>
                   {found.length === q.forcing.length ? 'All of them. That’s the habit.' : `Missed (red): ${q.forcing.filter((f) => !found.includes(f.from + f.to)).map((f) => f.san).join(', ')}.`}
                 </p>
-                <Button icon={<ArrowRight size={16} />} onClick={next}>Next position</Button>
+                <NextDock><Button icon={<ArrowRight size={16} />} onClick={next}>Next position</Button></NextDock>
               </>
             )}
           </div>
@@ -237,7 +237,7 @@ export function VisualizeTrainer() {
               {answer && (
                 <>
                   <p className={answer === q.answer ? 'tone-text-best' : 'tone-text-mistake'}>{answer === q.answer ? `Right — ${q.answer}.` : `It was ${q.answer}. The board now shows the position after the line.`}</p>
-                  <Button icon={<ArrowRight size={16} />} onClick={fresh}>Next</Button>
+                  <NextDock><Button icon={<ArrowRight size={16} />} onClick={fresh}>Next</Button></NextDock>
                 </>
               )}
               {answer && finalFen && answerUci && <FollowUpPanel fen={finalFen} uci={answerUci} tried={answer !== q.answer ? [triedUci(finalFen, answer)].filter(Boolean) as string[] : []} />}

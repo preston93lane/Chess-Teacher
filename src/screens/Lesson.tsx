@@ -12,7 +12,7 @@ import { lineScore, winPct } from '../lib/coach/eval';
 import { soundForSan, playSound } from '../lib/sound';
 import { FollowUpPanel } from '../components/FollowUp';
 import { Board, type Arrow, type Mark } from '../components/Board';
-import { Button, Header, Spinner } from '../components/ui';
+import { Button, Header, Spinner, NextDock } from '../components/ui';
 import { BlockBanner, completeBlock, useBlockId } from '../components/BlockBanner';
 
 function sectionPosition(s: LessonSection) {
@@ -85,6 +85,15 @@ export function LessonScreen({ id }: { id: string }) {
           </Button>
         )}
       </div>
+      {section.task && progress?.solved.includes(String(index)) && (
+        <NextDock>
+          {last ? (
+            <Button icon={<Check size={16} />} onClick={finish}>Complete lesson</Button>
+          ) : (
+            <Button icon={<ArrowRight size={16} />} onClick={() => setIndex(index + 1)}>Next</Button>
+          )}
+        </NextDock>
+      )}
     </div>
   );
 }

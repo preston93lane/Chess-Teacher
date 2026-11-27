@@ -9,7 +9,7 @@ import { useApp } from '../lib/store/app';
 import { playSound, soundForSan } from '../lib/sound';
 import { Board, type Arrow } from '../components/Board';
 import { FollowUpPanel } from '../components/FollowUp';
-import { Button, Header, Spinner } from '../components/ui';
+import { Button, Header, Spinner, NextDock } from '../components/ui';
 
 /** Score in pawns for `side` (mate = ±20). */
 async function evalFor(fen: string, side: Color, depth = 12): Promise<{ v: number; best?: string }> {
@@ -201,7 +201,7 @@ export function ThreatSpotter() {
             )}
             {checking && <Spinner label="Checking…" />}
             {msg && <p>{msg}</p>}
-            {stage === 'done' && <Button icon={<ArrowRight size={16} />} onClick={load}>Next position</Button>}
+            {stage === 'done' && <NextDock><Button icon={<ArrowRight size={16} />} onClick={load}>Next position</Button></NextDock>}
             {stage === 'done' && defence && <FollowUpPanel fen={q.fen} uci={defence.uci} tried={defence.tried ? [defence.tried] : []} title="How the defence works" />}
           </div>
           {score.n > 0 && <p className="muted small">Threats spotted {score.threats}/{score.n} · held {score.defences}/{score.n}</p>}
@@ -326,7 +326,7 @@ export function GuessTheMove() {
                 <p className="drill-prompt">You are {player}. Move {Math.floor(ply / 2) + 1}: what did they play? <span className="muted small">(guess {guesses.length + 1} of {MAX})</span></p>
                 {checking && <Spinner label="Comparing with the engine…" />}
                 {msg && <p>{msg}</p>}
-                {revealed && <Button icon={<ArrowRight size={16} />} onClick={advance}>Continue</Button>}
+                {revealed && <NextDock><Button icon={<ArrowRight size={16} />} onClick={advance}>Continue</Button></NextDock>}
                 {revealed && masterUci && (
                   <FollowUpPanel fen={fen} uci={masterUci} tried={guesses[guesses.length - 1]?.mine !== master && guesses[guesses.length - 1]?.mineUci ? [guesses[guesses.length - 1].mineUci!] : []} title={`Why ${player} played ${master}`} />
                 )}

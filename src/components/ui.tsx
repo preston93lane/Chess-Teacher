@@ -191,3 +191,17 @@ export function Section({ title, action, children, className = '' }: { title?: R
     </section>
   );
 }
+
+/**
+ * The "next" action once a task is done: pinned above the tab bar on the
+ * right, in the thumb zone, so it is reachable without scrolling past the
+ * explanation.
+ */
+export function NextDock({ children }: { children: ReactNode }) {
+  return (
+    <>
+      <div className="next-dock-spacer" aria-hidden />
+      {createPortal(<div className="next-dock">{children}</div>, document.body)}
+    </>
+  );
+}

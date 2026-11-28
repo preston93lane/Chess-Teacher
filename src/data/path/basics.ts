@@ -19,7 +19,7 @@ export const basics: Level = {
           title: 'The board',
           blurb: 'Files, ranks and square names',
           steps: [
-            say('Hi, I’m Pip! Every queen started out as a pawn like me, so let’s get you promoted. First, the board: 64 squares, and White always starts at the bottom.', { mood: 'wave' }),
+            say('Hi, I’m Rookie! Everyone starts out as a rookie — me included — so let’s get you to grandmaster. First, the board: 64 squares, and White always starts at the bottom.', { mood: 'wave' }),
             say('Columns are files, named a to h. Rows are ranks, numbered 1 to 8. Put them together and every square has a name — this one is e4.', { marks: ['e4'] }),
             choice('Which square is ringed?', ['d5', 'e4', 'd4', 'e5'], 0, 'File d, rank 5: d5. Read the letter first, then the number.', { fen: EMPTY, marks: ['d5'] }),
             choice('The queen starts on…', ['d1', 'e1', 'c1', 'f1'], 0, '“Queen on her own colour”: the white queen starts on the light square d1, next to the king on e1.'),

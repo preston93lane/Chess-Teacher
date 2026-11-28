@@ -45,6 +45,7 @@ import { ThreatSpotter, GuessTheMove } from './screens/MasterTrainers';
 import { TrapTrainer } from './screens/Traps';
 import { LearnScreen } from './screens/Learn';
 import { LearnStart } from './screens/LearnStart';
+import { PlacementScreen } from './screens/Placement';
 import { PathLessonScreen } from './screens/PathLesson';
 import { CoachCheck } from './screens/CoachCheck';
 
@@ -80,6 +81,7 @@ function route(path: string): ReactNode {
   if (p === '/learn') return <LearnScreen />;
   if (p === '/learn/start') return <LearnStart />;
   if (p === '/learn/coach') return <CoachCheck />;
+  if (p === '/learn/placement') return <PlacementScreen />;
   if ((m = match('/learn/lesson/:id', p))) return <PathLessonScreen key={path} id={m.id} />;
   if (p === '/play') return <PlaySetup />;
   if (p === '/play/game') return <GameScreen />;
@@ -169,7 +171,7 @@ export function App() {
     return () => clearTimeout(t);
   }, [hydrated]);
 
-  const immersive = path.startsWith('/learn/lesson') || path.startsWith('/learn/start');
+  const immersive = path.startsWith('/learn/lesson') || path.startsWith('/learn/start') || path.startsWith('/learn/placement');
   return (
     <div className={`shell${immersive ? ' is-immersive' : ''}`}>
       <nav className="nav" aria-label="Main">

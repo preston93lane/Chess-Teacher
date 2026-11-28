@@ -11,6 +11,7 @@ balanced, high-quality selection:
   * puzzles from master / super-GM games.
 
 Usage:  curl -s https://database.lichess.org/lichess_db_puzzle.csv.zst | python3 scripts/build-puzzles.py
+        npx tsx scripts/tag-puzzles.ts scripts/puzzle-opening-tags.json   (side, opening family, computed tactics)
 Requires: pip install zstandard
 """
 import csv
@@ -115,7 +116,7 @@ for row in rows:
         if tag in otags.split():
             opening = oid
             break
-    item = (row[col['PuzzleId']], row[col['FEN']], row[col['Moves']], rating, tags, opening)
+    item = (row[col['PuzzleId']], row[col['FEN']], row[col['Moves']], rating, tags, opening, otags)
     band = max(4, min(29, rating // 100))
     bands.setdefault(band, Reservoir(PER_BAND)).add(item)
     for t in tags:
@@ -133,7 +134,10 @@ for r in list(bands.values()) + list(themes.values()) + list(openings.values()) 
 
 OPENING_IDS = sorted({o for o, _ in OPENING_TAGS})
 out = []
-for pid, fen, mv, rating, tags, opening in sorted(selected.values(), key=lambda x: x[3]):
+opening_tags = {}
+for pid, fen, mv, rating, tags, opening, otags in sorted(selected.values(), key=lambda x: x[3]):
+    if otags:
+        opening_tags[pid] = otags
     out.append([
         pid,
         fen,
@@ -148,6 +152,10 @@ dest = os.path.join(root, 'src', 'data', 'puzzles.json')
 with open(dest, 'w') as f:
     json.dump({'source': 'Lichess puzzle database (CC0), https://database.lichess.org/#puzzles',
                'themes': THEMES, 'openings': OPENING_IDS, 'puzzles': out}, f, separators=(',', ':'))
+tags_dest = os.path.join(root, 'scripts', 'puzzle-opening-tags.json')
+with open(tags_dest, 'w') as f:
+    json.dump(opening_tags, f, separators=(',', ':'))
+print(f'opening tags for {len(opening_tags):,} puzzles -> {tags_dest}; now run: npx tsx scripts/tag-puzzles.ts {tags_dest}', file=sys.stderr)
 print(f'scanned {n:,}, eligible {kept:,}, selected {len(out):,} -> {dest} ({os.path.getsize(dest)/1e6:.1f} MB)', file=sys.stderr)
 for t in PRACTICE_THEMES:
     print(f'  {t}: {len(themes[t].items)}', file=sys.stderr, end='')

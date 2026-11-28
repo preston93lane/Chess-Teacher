@@ -12,13 +12,21 @@ export interface Puzzle {
   moves: string[];
   rating: number;
   themes: string[];
+  /** Library opening id (one of the 14 openings with lessons). */
   opening?: string;
+  /** The side the solver plays. */
+  side: Color;
+  /** Opening family and variation of the source game, when Lichess recorded one. */
+  family?: string;
+  variation?: string;
 }
 
 interface RawDb {
   themes: string[];
   openings: string[];
-  puzzles: [string, string, string, number, number[], number][];
+  families?: string[];
+  variations?: string[];
+  puzzles: [string, string, string, number, number[], number, ('w' | 'b')?, number?, number?][];
 }
 
 let cache: Puzzle[] | null = null;
@@ -29,13 +37,16 @@ export function loadPuzzles(): Promise<Puzzle[]> {
   if (!loading) {
     loading = import('../data/puzzles.json').then((m) => {
       const db = (m.default ?? m) as unknown as RawDb;
-      cache = db.puzzles.map(([id, fen, mv, rating, th, op]) => ({
+      cache = db.puzzles.map(([id, fen, mv, rating, th, op, side, fam, vr]) => ({
         id,
         fen,
         moves: mv.split(' '),
         rating,
         themes: th.map((i) => db.themes[i]),
         opening: op >= 0 ? db.openings[op] : undefined,
+        side: side ?? (fen.split(' ')[1] === 'w' ? 'b' : 'w'),
+        family: fam !== undefined && fam >= 0 ? db.families?.[fam] : undefined,
+        variation: vr !== undefined && vr >= 0 ? db.variations?.[vr] : undefined,
       }));
       return cache;
     });
@@ -91,6 +102,16 @@ export const THEME_INFO: Record<string, { label: string; about: string; group: '
   middlegame: { label: 'Middlegame', about: 'Middlegame tactics.', group: 'Phase' },
   endgame: { label: 'Endgame', about: 'Endgame tactics.', group: 'Phase' },
 };
+
+/** Short tag line: side, opening and themes, for showing on a puzzle. */
+export function puzzleTags(p: Puzzle): { side: string; opening?: string; themes: string[] } {
+  const themes = p.themes.filter((t) => THEME_INFO[t] && THEME_INFO[t].group !== 'Phase').map((t) => THEME_INFO[t].label);
+  return {
+    side: p.side === 'w' ? 'You play White' : 'You play Black',
+    opening: p.family ? `${p.family}${p.variation && p.variation !== 'Other variations' ? `, ${p.variation}` : ''}` : undefined,
+    themes,
+  };
+}
 
 export function puzzleStart(p: Puzzle) {
   const c = new Chess(p.fen);

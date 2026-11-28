@@ -33,6 +33,9 @@ export function PuzzleSession() {
   const mode = q.get('mode') ?? 'rated';
   const theme = q.get('theme') ?? '';
   const openingId = q.get('id') ?? '';
+  const fam = q.get('fam') ?? '';
+  const sideQ = q.get('side');
+  const side = sideQ === 'w' || sideQ === 'b' ? sideQ : null;
   const mixThemes = (q.get('themes') ?? '').split(',').filter(Boolean);
   const target = +(q.get('count') ?? 0);
   const blockId = q.get('block');
@@ -52,14 +55,19 @@ export function PuzzleSession() {
   const rated = mode !== 'daily';
 
   const filter = useMemo(() => {
-    if (mode === 'theme') return (p: Puzzle) => p.themes.includes(theme);
-    if (mode === 'opening') return (p: Puzzle) => p.opening === openingId;
-    if (mode === 'master') return isMaster;
-    if (mode === 'mix')
-      return (p: Puzzle) => mixThemes.some((t) => (t.startsWith('opening:') ? p.opening === t.slice(8) : p.themes.includes(t)));
-    return undefined;
+    const base = ((): ((p: Puzzle) => boolean) | undefined => {
+      if (mode === 'theme') return (p: Puzzle) => p.themes.includes(theme);
+      if (mode === 'opening') return (p: Puzzle) => p.opening === openingId;
+      if (mode === 'family') return (p: Puzzle) => p.family === fam;
+      if (mode === 'master') return isMaster;
+      if (mode === 'mix')
+        return (p: Puzzle) => mixThemes.some((t) => (t.startsWith('opening:') ? p.opening === t.slice(8) : p.themes.includes(t)));
+      return undefined;
+    })();
+    if (!side) return base;
+    return (p: Puzzle) => p.side === side && (!base || base(p));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, theme, openingId, q.get('themes')]);
+  }, [mode, theme, openingId, fam, side, q.get('themes')]);
 
   const next = useCallback(() => {
     if (!db) return;
@@ -132,6 +140,7 @@ export function PuzzleSession() {
     mix: 'Mixed tactics',
     theme: THEME_INFO[theme]?.label ?? 'Theme',
     opening: getOpening(openingId)?.name ?? 'Opening tactics',
+    family: fam || 'Opening tactics',
   };
   const themeLabels = puzzle.themes.map((t) => THEME_INFO[t]?.label).filter(Boolean) as string[];
   const mate = puzzle.themes.find((t) => /^mateIn\d$/.test(t));
@@ -141,7 +150,7 @@ export function PuzzleSession() {
       <Header
         title={titles[mode] ?? 'Puzzles'}
         backTo={blockId ? '/program' : '/puzzles'}
-        sub={`Your rating ${ps.rating}${target ? ` · ${Math.min(solvedInSet, target)}/${target} in this set` : ''}${streak > 1 ? ` · streak ${streak}` : ''}`}
+        sub={`${side ? `As ${side === 'w' ? 'White' : 'Black'} · ` : ''}Your rating ${ps.rating}${target ? ` · ${Math.min(solvedInSet, target)}/${target} in this set` : ''}${streak > 1 ? ` · streak ${streak}` : ''}`}
       />
       <BlockBanner />
       <div className="board-screen">
@@ -177,7 +186,11 @@ export function PuzzleSession() {
                 <strong>Themes:</strong> {themeLabels.join(', ') || '—'} · rated {puzzle.rating}
               </p>
               {(result.ok || showSolution) && <p className="muted small mt8">{solutionLine(puzzle)}</p>}
-              {puzzle.opening && <p className="faint small mt8">From a game in the {getOpening(puzzle.opening)?.name}.</p>}
+              {(puzzle.family || puzzle.opening) && (
+                <p className="faint small mt8">
+                  From a game in the {puzzle.family ? `${puzzle.family}${puzzle.variation && puzzle.variation !== 'Other variations' ? `, ${puzzle.variation}` : ''}` : getOpening(puzzle.opening!)?.name}.
+                </p>
+              )}
             </div>
           )}
 

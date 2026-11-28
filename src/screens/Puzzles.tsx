@@ -21,17 +21,26 @@ export function PuzzlesHub() {
   const { db } = usePuzzleDb();
   const ps = useApp((s) => s.puzzles);
   const repertoire = useApp((s) => s.repertoire);
+  const [side, setSide] = useState<'' | 'w' | 'b'>('');
+  const [allFams, setAllFams] = useState(false);
+  const sq = side ? `&side=${side}` : '';
   const counts = useMemo(() => {
     const m = new Map<string, number>();
     const o = new Map<string, number>();
+    const f = new Map<string, number>();
     let masters = 0;
+    let total = 0;
     for (const p of db ?? []) {
+      if (side && p.side !== side) continue;
+      total++;
       for (const t of p.themes) m.set(t, (m.get(t) ?? 0) + 1);
       if (p.opening) o.set(p.opening, (o.get(p.opening) ?? 0) + 1);
+      if (p.family) f.set(p.family, (f.get(p.family) ?? 0) + 1);
       if (isMaster(p)) masters++;
     }
-    return { themes: m, openings: o, masters };
-  }, [db]);
+    const families = [...f.entries()].filter(([, n]) => n >= 8).sort((a, b) => b[1] - a[1]);
+    return { themes: m, openings: o, families, masters, total };
+  }, [db, side]);
   const recent = ps.history.slice(0, 20);
   const recentRate = recent.length ? Math.round((recent.filter((h) => h.ok).length / recent.length) * 100) : null;
   const dailyDone = ps.dailyDone === today();
@@ -40,6 +49,15 @@ export function PuzzlesHub() {
   return (
     <div className="page">
       <Header title="Puzzles" sub={db ? `${db.length.toLocaleString()} puzzles on this device — from real games, rated and sorted by theme.` : 'Loading the puzzle collection…'} />
+
+      <div className="segmented puzzle-side" role="radiogroup" aria-label="Play as">
+        {([['', 'Both colours'], ['w', 'As White'], ['b', 'As Black']] as const).map(([v, label]) => (
+          <button key={v} role="radio" aria-checked={side === v} className={`${side === v ? ' is-on' : ''}`} onClick={() => setSide(v)}>
+            {label}
+          </button>
+        ))}
+      </div>
+      {side && db && <p className="muted small mb8">{counts.total.toLocaleString()} puzzles where you play {side === 'w' ? 'White' : 'Black'}. Every list below is filtered.</p>}
 
       <div className="puzzle-hero">
         <div className="puzzle-rating">
@@ -50,7 +68,7 @@ export function PuzzlesHub() {
           </span>
         </div>
         <div className="puzzle-actions">
-          <button className="puzzle-action puzzle-action-main" onClick={() => navigate('/puzzles/play?mode=rated')} disabled={!db}>
+          <button className="puzzle-action puzzle-action-main" onClick={() => navigate(`/puzzles/play?mode=rated${sq}`)} disabled={!db}>
             <Play size={20} />
             <span>
               <strong>Rated puzzles</strong>
@@ -85,7 +103,7 @@ export function PuzzlesHub() {
       </Section>
 
       <Section title="From master games">
-        <button className="list-item list-standalone" onClick={() => navigate('/puzzles/play?mode=master')} disabled={!db}>
+        <button className="list-item list-standalone" onClick={() => navigate(`/puzzles/play?mode=master${sq}`)} disabled={!db}>
           <Crown size={20} />
           <span className="list-item-main">
             <span className="list-item-title">Master &amp; grandmaster games</span>
@@ -99,10 +117,26 @@ export function PuzzlesHub() {
         {repOpenings.length === 0 && <p className="muted small mb8">Add openings to your repertoire to see them first. All 14 library openings have puzzles from real games.</p>}
         <div className="chips">
           {[...repOpenings, ...OPENINGS.filter((o) => !repertoire[o.id])].map((o) => (
-            <button key={o.id} className={`chip${repertoire[o.id] ? ' chip-on' : ''}`} onClick={() => navigate(`/puzzles/play?mode=opening&id=${o.id}`)} disabled={!counts.openings.get(o.id)}>
+            <button key={o.id} className={`chip${repertoire[o.id] ? ' chip-on' : ''}`} onClick={() => navigate(`/puzzles/play?mode=opening&id=${o.id}${sq}`)} disabled={!counts.openings.get(o.id)}>
               {o.name} <span className="num">{counts.openings.get(o.id) ?? 0}</span>
             </button>
           ))}
+        </div>
+      </Section>
+
+      <Section title="Every opening">
+        <p className="muted small mb8">Puzzles grouped by the opening of the game they came from — {counts.families.length} openings, wherever Lichess recorded one.</p>
+        <div className="chips">
+          {(allFams ? counts.families : counts.families.slice(0, 18)).map(([f, n]) => (
+            <button key={f} className="chip" onClick={() => navigate(`/puzzles/play?mode=family&fam=${encodeURIComponent(f)}${sq}`)}>
+              {f} <span className="num">{n}</span>
+            </button>
+          ))}
+          {counts.families.length > 18 && (
+            <button className="chip" onClick={() => setAllFams(!allFams)}>
+              {allFams ? 'Show fewer' : `Show all ${counts.families.length}`}
+            </button>
+          )}
         </div>
       </Section>
 
@@ -117,7 +151,7 @@ export function PuzzlesHub() {
                   .filter(([, v]) => v.group === g)
                   .filter(([k]) => (counts.themes.get(k) ?? 0) >= 10)
                   .map(([k, v]) => (
-                    <button key={k} className="theme-card" onClick={() => navigate(`/puzzles/play?mode=theme&theme=${k}`)}>
+                    <button key={k} className="theme-card" onClick={() => navigate(`/puzzles/play?mode=theme&theme=${k}${sq}`)}>
                       <span className="theme-card-label">{v.label}</span>
                       <span className="theme-card-about">{v.about}</span>
                       <span className="theme-card-count num">{counts.themes.get(k)}</span>

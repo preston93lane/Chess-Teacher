@@ -1,6 +1,6 @@
 import { RepTrainPanel } from './RepTrainer';
 import { useMemo, useState } from 'react';
-import { BookOpen, Repeat, Swords, Plus, Check, ArrowRight, Database } from 'lucide-react';
+import { BookOpen, Repeat, Swords, Plus, Check, ArrowRight, Database, Puzzle } from 'lucide-react';
 import { getOpening, parseLine } from '../lib/openings/book';
 import { useApp } from '../lib/store/app';
 import { navigate } from '../lib/router';
@@ -57,6 +57,9 @@ export function OpeningDetail({ id }: { id: string }) {
             />
             <Button variant="ghost" size="sm" icon={<Database size={16} />} onClick={() => navigate(`/explorer?moves=${encodeURIComponent(opening.root)}`)}>
               Master games
+            </Button>
+            <Button variant="ghost" size="sm" icon={<Puzzle size={16} />} onClick={() => navigate(`/puzzles/play?mode=opening&id=${id}&side=${side}`)}>
+              Tactics as {sideName}
             </Button>
             <Button
               variant={inRep ? 'secondary' : 'primary'}

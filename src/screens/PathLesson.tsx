@@ -13,7 +13,7 @@ import { arrowsOf, diagramPosition, marksOf, parseLineSteps, sameSan } from '../
 import type { ChoiceStep, LineStep, Mood, MoveStep, PlayLineStep, PuzzleStep, SayStep, Step } from '../lib/path/types';
 import { Board, type Arrow } from '../components/Board';
 import { PuzzleSolver, solutionLine } from '../components/PuzzleSolver';
-import { Pip, PipSays } from '../components/Mascot';
+import { Rookie, RookieSays } from '../components/Mascot';
 import { Button, Spinner } from '../components/ui';
 
 const PRAISE = ['Nice!', 'Exactly!', 'Great move!', 'You got it!', 'Brilliant!', 'Spot on!'];
@@ -77,9 +77,9 @@ function StaticBoard({ step }: { step: SayStep | ChoiceStep }) {
 function SayView({ step, onDone, crown }: StepProps<SayStep>) {
   return (
     <>
-      <PipSays mood={step.mood ?? 'happy'} crown={crown}>
+      <RookieSays mood={step.mood ?? 'happy'} crown={crown}>
         <p className="pl-text">{step.text}</p>
-      </PipSays>
+      </RookieSays>
       {hasBoard(step) && <StaticBoard step={step} />}
       <Foot action="Continue" onAction={onDone} />
     </>
@@ -105,7 +105,7 @@ function LineView({ step, onDone, crown }: StepProps<LineStep>) {
   };
   return (
     <>
-      <PipSays mood={cur?.comment ? 'think' : 'happy'} crown={crown}>
+      <RookieSays mood={cur?.comment ? 'think' : 'happy'} crown={crown}>
         {cur ? (
           <p className="pl-text">
             <b>{label(idx - 1)}</b> {cur.comment ?? ''}
@@ -113,7 +113,7 @@ function LineView({ step, onDone, crown }: StepProps<LineStep>) {
         ) : (
           <p className="pl-text">{step.text}</p>
         )}
-      </PipSays>
+      </RookieSays>
       <div className="pl-board">
         <Board fen={fen} orientation={step.orientation ?? 'w'} movable={null} lastMove={cur ? [cur.from, cur.to] : null} arrows={arrowsOf(idx === 0 ? step.arrows : undefined)} />
       </div>
@@ -268,10 +268,10 @@ function MoveView({ step, onDone, onMistake, crown }: StepProps<MoveStep>) {
   const bubble = solved ? step.text : s.state === 'wrong' || s.wrongs > 0 ? (s.wrongs >= 2 ? `Not quite. Play ${s.expectedMove?.san ?? 'the arrow'}.` : `Not quite — try again.${step.hint ? ` ${step.hint}` : ''}`) : step.text;
   return (
     <>
-      <PipSays mood={mood} crown={crown}>
+      <RookieSays mood={mood} crown={crown}>
         <p className="pl-text">{bubble}</p>
         {!solved && <p className="pl-sub">{side === 'w' ? 'White' : 'Black'} to move</p>}
-      </PipSays>
+      </RookieSays>
       <div className={`pl-board${s.state === 'wrong' ? ' is-wrong' : ''}${solved ? ' is-right' : ''}`}>
         <Board
           fen={s.fen}
@@ -320,9 +320,9 @@ function ChoiceView({ step, onDone, onMistake, crown }: StepProps<ChoiceStep>) {
   };
   return (
     <>
-      <PipSays mood={picked === null ? 'think' : ok ? 'cheer' : 'oops'} crown={crown}>
+      <RookieSays mood={picked === null ? 'think' : ok ? 'cheer' : 'oops'} crown={crown}>
         <p className="pl-text">{step.text}</p>
-      </PipSays>
+      </RookieSays>
       {hasBoard(step) && <StaticBoard step={step} />}
       <div className="pl-options" role="list">
         {step.options.map((o, i) => (
@@ -360,8 +360,11 @@ function PuzzlesView({ step, node, onDone, onMistake, onPuzzle, crown }: StepPro
     void loadPuzzles().then((all) => {
       if (!live) return;
       const [lo, hi] = [step.min ?? node.level.band[0], step.max ?? node.level.band[1]];
-      const filter = (p: Puzzle) =>
+      const base = (p: Puzzle) =>
         (!step.themes.length || step.themes.some((t) => p.themes.includes(t))) && (step.need ?? []).every((t) => p.themes.includes(t)) && (!step.opening || p.opening === step.opening);
+      // Prefer the learner's side when there are enough of those puzzles.
+      const sided = (p: Puzzle) => base(p) && p.side === step.side;
+      const filter = step.side && all.filter(sided).length >= step.count * 3 ? sided : base;
       const target = stats.attempts >= 15 ? Math.min(hi, Math.max(lo, stats.rating)) : Math.round(lo + (hi - lo) * 0.35);
       const seen = new Set(stats.seen);
       const out: Puzzle[] = [];
@@ -383,9 +386,9 @@ function PuzzlesView({ step, node, onDone, onMistake, onPuzzle, crown }: StepPro
   if (!list.length) {
     return (
       <>
-        <PipSays mood="oops" crown={crown}>
+        <RookieSays mood="oops" crown={crown}>
           <p className="pl-text">I couldn’t find puzzles for this one. Let’s keep going!</p>
-        </PipSays>
+        </RookieSays>
         <Foot action="Continue" onAction={onDone} />
       </>
     );
@@ -401,13 +404,14 @@ function PuzzlesView({ step, node, onDone, onMistake, onPuzzle, crown }: StepPro
   };
   return (
     <>
-      <PipSays mood={result === null ? 'think' : result ? 'cheer' : 'oops'} crown={crown}>
+      <RookieSays mood={result === null ? 'think' : result ? 'cheer' : 'oops'} crown={crown}>
         <p className="pl-text">{k === 0 && result === null ? step.text : result === null ? `${side === 'w' ? 'White' : 'Black'} to move. Find the best move.` : result ? praise() : 'That wasn’t it — watch the solution.'}</p>
         <p className="pl-sub">
           Puzzle {k + 1} of {list.length} · rated {p.rating}
+          {p.family ? ` · ${p.family}` : ''}
           {node.lesson.kind === 'review' ? ` · ${score} solved` : ''}
         </p>
-      </PipSays>
+      </RookieSays>
       <div className={`pl-board${result === false ? ' is-wrong' : ''}${result ? ' is-right' : ''}`}>
         <PuzzleSolver
           key={p.id}
@@ -457,14 +461,14 @@ function PlayLineView({ step, onDone, onMistake, crown }: StepProps<PlayLineStep
   const lastComment = s.idx > 0 ? parsed.comments[s.idx - 1] : undefined;
   return (
     <>
-      <PipSays mood={solved ? 'cheer' : s.state === 'wrong' ? 'oops' : 'think'} crown={crown}>
+      <RookieSays mood={solved ? 'cheer' : s.state === 'wrong' ? 'oops' : 'think'} crown={crown}>
         <p className="pl-text">
           {solved ? 'Perfect — that’s the whole line.' : s.state === 'wrong' || s.wrongs > 0 ? `Not this one. Your move here is ${s.expectedMove?.san ?? '—'}.` : lastComment ?? step.text}
         </p>
         <p className="pl-sub">
           Move {Math.min(sans.length, s.idx + 1)} of {sans.length}
         </p>
-      </PipSays>
+      </RookieSays>
       <div className={`pl-board${s.state === 'wrong' ? ' is-wrong' : ''}${solved ? ' is-right' : ''}`}>
         <Board
           fen={s.fen}
@@ -509,9 +513,9 @@ export function PathLessonScreen({ id }: { id: string }) {
   if (!node) {
     return (
       <div className="pl">
-        <PipSays mood="oops">
+        <RookieSays mood="oops">
           <p className="pl-text">I can’t find that lesson.</p>
-        </PipSays>
+        </RookieSays>
         <Foot action="Back to the path" onAction={() => navigate('/learn')} />
       </div>
     );
@@ -588,7 +592,7 @@ function LessonPlayer({ node }: { node: PathNode }) {
         createPortal(
           <div className="pl-quit" role="dialog" aria-modal="true" aria-label="Quit lesson?">
             <div className="pl-quit-card">
-              <Pip mood="oops" size={72} />
+              <Rookie mood="oops" size={72} />
               <h2>Wait, don’t go!</h2>
               <p>You’ll lose your progress in this lesson.</p>
               <Button size="lg" onClick={() => setQuit(false)}>
@@ -611,7 +615,7 @@ function ResultView({ node, result, mistakes, seconds, tally, crown }: { node: P
   if (!result.passed) {
     return (
       <div className="pl pl-result">
-        <Pip mood="oops" size={120} crown={crown} />
+        <Rookie mood="oops" size={120} crown={crown} />
         <h1>So close!</h1>
         <p className="pl-result-sub">
           {tally.ok} of {tally.total} solved — you need {Math.ceil(tally.total * 0.75)} to pass the unit test. Review the unit’s lessons and try again.
@@ -622,7 +626,7 @@ function ResultView({ node, result, mistakes, seconds, tally, crown }: { node: P
   }
   return (
     <div className="pl pl-result">
-      <Pip mood="cheer" size={120} crown={crown} className="pip-celebrate" />
+      <Rookie mood="cheer" size={120} crown={crown} className="rookie-celebrate" />
       <h1>{isTest ? 'Unit complete!' : node.lesson.kind === 'repertoire' ? 'Line learned!' : 'Lesson complete!'}</h1>
       <div className="pl-stars" aria-label={`${result.stars} of 3 stars`}>
         {[1, 2, 3].map((s) => (

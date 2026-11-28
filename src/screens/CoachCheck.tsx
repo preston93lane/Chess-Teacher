@@ -6,7 +6,7 @@ import { runCheckIn, CONCEPT_LABEL, lessonFor, moveName, type CheckIn, type Open
 import { findLesson } from '../data/path';
 import { getOpening } from '../lib/openings/book';
 import type { Concept } from '../lib/path/types';
-import { PipSays } from '../components/Mascot';
+import { RookieSays } from '../components/Mascot';
 import { Button, Empty, Header, Section, Spinner } from '../components/ui';
 
 export function CoachCheck() {
@@ -39,9 +39,9 @@ export function CoachCheck() {
     return (
       <div className="page page-narrow">
         <Header title="Coach check-in" backTo="/learn" />
-        <PipSays mood="think">
+        <RookieSays mood="think">
           <p className="pl-text">No games yet! Play a bot or import your online games, and I’ll check whether you played your repertoire and used what you practised.</p>
-        </PipSays>
+        </RookieSays>
         <div className="row" style={{ gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
           <Button icon={<Swords size={16} />} onClick={() => navigate('/play')}>Play a game</Button>
           <Button variant="secondary" icon={<Upload size={16} />} onClick={() => navigate('/import')}>Import games</Button>
@@ -86,9 +86,9 @@ function Report({ data }: { data: CheckIn }) {
   return (
     <div className="page page-narrow coach-check">
       <Header title="Coach check-in" backTo="/learn" sub={`Your last ${data.games} game${data.games === 1 ? '' : 's'} against your plan`} />
-      <PipSays mood={youLeft.length || byConcept.length ? 'think' : 'cheer'}>
+      <RookieSays mood={youLeft.length || byConcept.length ? 'think' : 'cheer'}>
         <p className="pl-text">{headline}</p>
-      </PipSays>
+      </RookieSays>
 
       <Section title="Opening plan">
         <div className="cc-tiles">
@@ -230,6 +230,11 @@ function OpeningRow({ o }: { o: OpeningCheck }) {
         {o.status === 'you-left' && o.openingId && (
           <Button size="sm" onClick={() => navigate(`/reptrain/${o.openingId}/tree?side=${o.color}`)}>
             Drill
+          </Button>
+        )}
+        {o.openingId && (
+          <Button size="sm" variant="ghost" onClick={() => navigate(`/puzzles/play?mode=opening&id=${o.openingId}&side=${o.color}`)}>
+            Tactics
           </Button>
         )}
         <Button size="sm" variant="ghost" onClick={() => navigate(`/games/${o.gameId}?ply=${(o.ply ?? o.depth) || 0}`)}>

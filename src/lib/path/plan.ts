@@ -60,7 +60,7 @@ export function openingLessons(openingId: string, slot: 'white' | 'vsE4' | 'vsD4
   const introPlies = Math.min(first.sans.length, rootPlies + 4);
   const hasPuzzles = puzzleMeta.includes(o.id);
   const puzzleStep = (count: number): Step[] =>
-    hasPuzzles ? [{ kind: 'puzzles', text: `Tactics from real ${o.name} games.`, themes: [], count, opening: o.id }] : [];
+    hasPuzzles ? [{ kind: 'puzzles', text: `Tactics from real ${o.name} games — you play ${side === 'w' ? 'White' : 'Black'}, like in your repertoire.`, themes: [], count, opening: o.id, side }] : [];
   const out: { lesson: Lesson; opening: PathNode['opening'] }[] = [];
   out.push({
     opening: { id: o.id, side, lineId: o.lines[0].id, plies: introPlies },
@@ -116,7 +116,7 @@ export function buildPath(profile: PlayerProfile | null): PathUnit[] {
     const lists = (['white', 'vsE4', 'vsD4'] as const).map((slot) => openingLessons(profile[slot], slot));
     const queue: { lesson: Lesson; opening: PathNode['opening'] }[] = [];
     for (let i = 0; lists.some((l) => i < l.length); i++) for (const l of lists) if (l[i]) queue.push(l[i]);
-    const startUnit = Math.max(0, units.findIndex((u) => u.level.id === profile.level));
+    const startUnit = startUnitIndex(units, profile);
     const slots = units.length - startUnit;
     const per = Math.max(1, Math.ceil(queue.length / slots));
     let q = 0;
@@ -133,25 +133,32 @@ export function buildPath(profile: PlayerProfile | null): PathUnit[] {
   return units;
 }
 
-export type NodeStatus = 'done' | 'current' | 'open' | 'locked';
+export type NodeStatus = 'done' | 'current' | 'open';
+
+/** Index of the unit the learner starts from. */
+export function startUnitIndex(units: { unit: Unit; level: Level }[], profile: PlayerProfile | null): number {
+  if (!profile) return 0;
+  const byUnit = profile.startUnit ? units.findIndex((u) => u.unit.id === profile.startUnit) : -1;
+  if (byUnit >= 0) return byUnit;
+  return Math.max(0, units.findIndex((u) => u.level.id === profile.level));
+}
 
 /**
- * Lessons up to your starting level are open; from there on, each lesson
- * unlocks when the one before it is done.
+ * Every lesson is open — scroll anywhere on the path. “Current” is the first
+ * unfinished lesson from the learner’s starting point onward.
  */
 export function pathStatus(units: PathUnit[], done: Record<string, unknown>, profile: PlayerProfile | null) {
   const nodes = units.flatMap((u) => u.nodes);
-  const startLevel = profile ? LEVEL_ORDER.indexOf(profile.level) : 0;
-  const start = nodes.findIndex((n) => LEVEL_ORDER.indexOf(n.level.id) >= startLevel);
+  const su = startUnitIndex(units, profile);
+  const start = units[su]?.nodes[0]?.index ?? 0;
   let current = nodes.findIndex((n, i) => i >= start && !done[n.lesson.id]);
   if (current < 0) current = nodes.findIndex((n) => !done[n.lesson.id]);
   const status = (n: PathNode): NodeStatus => {
     if (done[n.lesson.id]) return 'done';
     if (n.index === current) return 'current';
-    if (n.index < start || n.index < current) return 'open';
-    return 'locked';
+    return 'open';
   };
-  return { nodes, current: current >= 0 ? nodes[current] : null, status };
+  return { nodes, current: current >= 0 ? nodes[current] : null, status, start };
 }
 
 export function findNode(units: PathUnit[], id: string): PathNode | undefined {

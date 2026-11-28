@@ -4,7 +4,9 @@ Outpost is a chess training app for intermediate and advanced players. It runs e
 
 ## What it does
 
-**Learn with Pip.** The Learn tab is a Duolingo-style path from about 300 to 2000, taught by Pip, a pawn who wants to become a queen. It has four levels (Basics, Beginner, Intermediate, Expert), 20 units and 80 short lessons. Each lesson mixes small steps: Pip explains an idea on a board, walks through a line move by move (Morphy’s Opera Game, Légal’s mate, Philidor’s legacy, the Greek gift, the minority attack…), asks you to find the move or answer a question, then hands you real puzzles on the same idea from the puzzle database, rated for your level. Every unit ends with an eight-puzzle unit test. You earn XP, stars, a streak and a daily goal.
+**Learn with Rookie.** The Learn tab is a Duolingo-style path from about 300 to 2000, taught by Rookie, a little rook. It has four levels (Basics, Beginner, Intermediate, Expert), 20 units and 80 short lessons. Each lesson mixes small steps: Rookie explains an idea on a board, walks through a line move by move (Morphy’s Opera Game, Légal’s mate, Philidor’s legacy, the Greek gift, the minority attack…), asks you to find the move or answer a question, then hands you real puzzles on the same idea from the puzzle database, rated for your level. Every unit ends with an eight-puzzle unit test. You earn XP, stars, a streak and a daily goal. Every lesson is open: start where you like and scroll anywhere on the path.
+
+**Placement game.** After the quiz you play one practice game against Rookie. Rookie opens at full strength, then gets a little sloppier every few moves: small inaccuracies, then real mistakes, then hanging pieces. Your average centipawn loss, your accuracy, how you came out of the strong opening phase and how many of Rookie's gifts you punished give a rough rating, blended with the level you gave in the quiz (less so the longer the game). That rating suggests a starting unit, which you can move easier or harder at any time. The game is saved to your games so you can review it.
 
 **Your chess personality.** An eight-question quiz finds your style (The Attacker, The Wall, The Gambiteer, The Professor, The Hypermodern or The All-rounder), your starting level, the weakness to focus on and a daily goal. It then picks a starter repertoire for White, against 1.e4 and against 1.d4 to suit your style and level; you can swap any of them. Lessons on that repertoire are woven into the path from your starting level on, one line at a time. Each one ends with you playing the line from memory, and its moves go into the repertoire trainer’s spaced-repetition schedule.
 
@@ -33,9 +35,11 @@ Outpost is a chess training app for intermediate and advanced players. It runs e
 - Puzzle Rush: 3 minutes, 5 minutes or survival.
 - 44 tactical themes to practise.
 - Puzzles from real games in each library opening, and from master games.
+- Every puzzle is tagged with the side you play, so any set can be practised as White or as Black only, and with its tactics. Lichess's own theme tags are used where they name a tactic. Where they don't, tactics are worked out from the solution moves (fork, pin, skewer, discovered attack, double check, hanging piece, sacrifice, promotion).
+- Puzzles whose source game has an opening recorded (about a third) carry its family and variation, giving sets for 120 openings. Repertoire lessons on the Learn path use puzzles from your opening where you play your side.
 - Missed puzzles go into your review deck.
 
-To rebuild the set, run `scripts/build-puzzles.py`.
+To rebuild the set, run `scripts/build-puzzles.py`, then `scripts/tag-puzzles.ts`.
 
 **Premoves.** Queue your next move while the bot is thinking; it plays the moment it becomes legal (tap elsewhere to cancel).
 

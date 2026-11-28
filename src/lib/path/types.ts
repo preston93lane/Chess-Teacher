@@ -1,7 +1,7 @@
 /**
  * The Learn path: a Duolingo-style course from about 300 to 2000, taught by
- * Pip the pawn. Levels hold units, units hold short lessons, and a lesson is
- * a list of small steps: Pip explains, walks a line, asks for a move or a
+ * Rookie the rook. Levels hold units, units hold short lessons, and a lesson is
+ * a list of small steps: Rookie explains, walks a line, asks for a move or a
  * multiple-choice answer, then hands over real puzzles on the same idea.
  */
 import type { Color } from '../chess/core';
@@ -26,7 +26,7 @@ export interface SayStep extends Diagram {
   mood?: Mood;
 }
 
-/** Pip plays through a line move by move; {comments} after a move are read out. */
+/** Rookie plays through a line move by move; {comments} after a move are read out. */
 export interface LineStep extends Diagram {
   kind: 'line';
   text: string;
@@ -68,6 +68,8 @@ export interface PuzzleStep {
   min?: number;
   max?: number;
   opening?: string;
+  /** Prefer puzzles where the solver plays this side (falls back if there are too few). */
+  side?: 'w' | 'b';
 }
 
 /** Play your side of a repertoire line from memory (the reply comes automatically). */

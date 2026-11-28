@@ -21,6 +21,10 @@ export interface PlayerProfile {
   vsD4: string;
   createdAt: number;
   scores: Partial<Record<StyleId, number>>;
+  /** Unit the learner chose to start from (defaults to the first unit of `level`). */
+  startUnit?: string;
+  /** Result of the placement game, if played. */
+  placement?: { elo: number; accuracy: number; chances: number; punished: number; moves: number; at: number };
 }
 
 type Weights = Partial<Record<StyleId, number>>;
@@ -95,8 +99,8 @@ export const QUIZ: QuizQuestion[] = [
       { label: 'Queen', sub: 'Power', w: { attacker: 2 } },
       { label: 'Knight', sub: 'Tricks', w: { hypermodern: 1, gambiteer: 1, attacker: 1 } },
       { label: 'Bishop', sub: 'Long diagonals', w: { hypermodern: 2, positional: 1 } },
-      { label: 'Rook', sub: 'Open files, endgames', w: { positional: 2, solid: 1 } },
-      { label: 'Pawn', sub: 'Like me, Pip!', w: { solid: 2, positional: 1 } },
+      { label: 'Rook', sub: 'Open files — like me!', w: { positional: 2, solid: 1 } },
+      { label: 'Pawn', sub: 'The soul of chess', w: { solid: 2, positional: 1 } },
     ],
   },
   {

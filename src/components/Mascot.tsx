@@ -2,66 +2,74 @@ import type { ReactNode } from 'react';
 import type { Mood } from '../lib/path/types';
 
 /**
- * Pip, the pawn who wants to be a queen. Drawn inline so it themes with the
- * app and animates per mood. A crown appears once the learner reaches Expert.
+ * Rookie, the little rook who coaches the Learn path. Drawn inline so it
+ * themes with the app and animates per mood. Soft, rounded shapes, big eyes,
+ * no arms. A gold crown appears once the learner reaches Expert.
  */
-export function Pip({ mood = 'happy', size = 72, crown = false, className = '' }: { mood?: Mood; size?: number; crown?: boolean; className?: string }) {
-  const eyesUp = mood === 'think';
+export function Rookie({ mood = 'happy', size = 72, crown = false, className = '' }: { mood?: Mood; size?: number; crown?: boolean; className?: string }) {
+  const lookUp = mood === 'think';
   const big = mood === 'wow' || mood === 'oops';
-  const eyeRy = big ? 5.2 : 4.4;
-  const pupilDy = eyesUp ? -2 : mood === 'oops' ? 1 : 0.6;
-  const pupilDx = eyesUp ? 1.6 : 0;
+  const happyShut = mood === 'cheer';
+  const eyeR = big ? 16.5 : 15.5;
+  const pupilR = big ? 11 : 10;
+  const pdy = lookUp ? -3.5 : mood === 'oops' ? 1.5 : 1;
+  const pdx = lookUp ? 2.5 : 0;
   return (
-    <svg className={`pip is-${mood} ${className}`} width={size} height={size * 1.25} viewBox="0 -12 120 150" role="img" aria-label="Pip the pawn">
+    <svg className={`rookie is-${mood} ${className}`} width={size} height={size * 1.15} viewBox="0 -14 120 138" role="img" aria-label="Rookie the rook">
       <defs>
-        <linearGradient id="pip-body" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="var(--pip-hi)" />
-          <stop offset="1" stopColor="var(--pip-body)" />
+        <linearGradient id="rookie-body" x1="0.15" y1="0" x2="0.85" y2="1">
+          <stop offset="0" stopColor="var(--rookie-hi)" />
+          <stop offset="0.55" stopColor="var(--rookie-body)" />
+          <stop offset="1" stopColor="var(--rookie-shade)" />
         </linearGradient>
       </defs>
-      <ellipse cx="60" cy="133" rx="36" ry="4.5" className="pip-shadow" />
-      <g className="pip-figure">
-        {/* base */}
-        <rect x="20" y="112" width="80" height="18" rx="9" fill="var(--pip-shade)" />
-        <rect x="26" y="108" width="68" height="10" rx="5" fill="var(--pip-body)" />
-        {/* body */}
-        <path d="M42 62 C40 80 34 96 28 110 L92 110 C86 96 80 80 78 62 Z" fill="url(#pip-body)" />
-        {/* arms */}
-        <g className="pip-arm pip-arm-l">
-          <path d="M38 82 C28 86 22 92 20 100" stroke="var(--pip-shade)" strokeWidth="7" strokeLinecap="round" fill="none" />
-        </g>
-        <g className="pip-arm pip-arm-r">
-          <path d="M82 82 C92 86 98 92 100 100" stroke="var(--pip-shade)" strokeWidth="7" strokeLinecap="round" fill="none" />
-        </g>
-        {/* collar */}
-        <ellipse cx="60" cy="60" rx="25" ry="7" fill="var(--pip-shade)" />
-        {/* head */}
-        <circle cx="60" cy="34" r="26" fill="url(#pip-body)" />
-        <ellipse cx="51" cy="20" rx="8" ry="5" fill="#fff" opacity="0.28" />
+      <ellipse cx="60" cy="119" rx="38" ry="5" className="rookie-shadow" />
+      <g className="rookie-figure">
+        {/* base: a soft, squashed pill */}
+        <rect x="12" y="96" width="96" height="22" rx="11" fill="var(--rookie-shade)" />
+        {/* chubby body, a little wider at the bottom */}
+        <path d="M32 34 C24 34 22 40 22 48 L19 86 C18 99 26 104 38 104 L82 104 C94 104 102 99 101 86 L98 48 C98 40 96 34 88 34 Z" fill="url(#rookie-body)" />
+        {/* turret: three round-topped merlons on a band */}
+        <rect x="15" y="4" width="27" height="32" rx="13" fill="url(#rookie-body)" />
+        <rect x="46.5" y="1" width="27" height="35" rx="13" fill="url(#rookie-body)" />
+        <rect x="78" y="4" width="27" height="32" rx="13" fill="url(#rookie-body)" />
+        <rect x="15" y="22" width="90" height="18" rx="9" fill="var(--rookie-body)" />
+        <ellipse cx="29" cy="11" rx="6.5" ry="3.6" fill="#fff" opacity="0.38" />
+        <ellipse cx="60" cy="8" rx="6.5" ry="3.6" fill="#fff" opacity="0.32" />
+        <path d="M24 50 Q23 70 24 84" stroke="#fff" strokeWidth="4" strokeLinecap="round" opacity="0.18" fill="none" />
         {crown && (
-          <g className="pip-crown">
-            <path d="M42 12 L46 -2 L53 8 L60 -6 L67 8 L74 -2 L78 12 Z" fill="#f6c443" stroke="#d99a1e" strokeWidth="2" strokeLinejoin="round" />
-            <circle cx="60" cy="-6" r="2.6" fill="#ff6f7d" />
+          <g className="rookie-crown">
+            <path d="M44 4 L47 -10 L54 -2 L60 -14 L66 -2 L73 -10 L76 4 Z" fill="#f6c443" stroke="#d99a1e" strokeWidth="2" strokeLinejoin="round" />
+            <circle cx="60" cy="-14" r="2.8" fill="#ff6f7d" />
           </g>
         )}
         {/* face */}
-        <g className="pip-eyes">
-          <ellipse cx="50" cy="34" rx="5.6" ry={eyeRy + 1} fill="#fff" />
-          <ellipse cx="70" cy="34" rx="5.6" ry={eyeRy + 1} fill="#fff" />
-          <circle cx={50 + pupilDx} cy={34 + pupilDy} r={big ? 3.4 : 3} fill="#141831" />
-          <circle cx={70 + pupilDx} cy={34 + pupilDy} r={big ? 3.4 : 3} fill="#141831" />
-          <circle cx={51.2 + pupilDx} cy={32.6 + pupilDy} r="1" fill="#fff" />
-          <circle cx={71.2 + pupilDx} cy={32.6 + pupilDy} r="1" fill="#fff" />
-        </g>
-        {mood === 'oops' && (
-          <g stroke="#141831" strokeWidth="2.2" strokeLinecap="round">
-            <path d="M43 25 L54 27.5" />
-            <path d="M77 25 L66 27.5" />
+        {happyShut ? (
+          <g stroke="#141831" strokeWidth="4.5" strokeLinecap="round" fill="none">
+            <path d="M30 64 Q41 51 52 64" />
+            <path d="M68 64 Q79 51 90 64" />
+          </g>
+        ) : (
+          <g className="rookie-eyes">
+            <circle cx="41" cy="62" r={eyeR} fill="#fff" />
+            <circle cx="79" cy="62" r={eyeR} fill="#fff" />
+            <circle cx={41 + pdx} cy={62 + pdy} r={pupilR} fill="#141831" />
+            <circle cx={79 + pdx} cy={62 + pdy} r={pupilR} fill="#141831" />
+            <circle cx={44.5 + pdx} cy={57.5 + pdy} r="3.8" fill="#fff" />
+            <circle cx={82.5 + pdx} cy={57.5 + pdy} r="3.8" fill="#fff" />
+            <circle cx={38 + pdx} cy={66 + pdy} r="1.8" fill="#fff" opacity="0.85" />
+            <circle cx={76 + pdx} cy={66 + pdy} r="1.8" fill="#fff" opacity="0.85" />
           </g>
         )}
-        {mood === 'think' && <path d="M64 24 Q70 21 76 24" stroke="#141831" strokeWidth="2.2" strokeLinecap="round" fill="none" />}
-        <circle cx="42" cy="44" r="4" fill="#ff8f9c" opacity="0.55" />
-        <circle cx="78" cy="44" r="4" fill="#ff8f9c" opacity="0.55" />
+        {mood === 'oops' && (
+          <g stroke="#141831" strokeWidth="3" strokeLinecap="round">
+            <path d="M28 43 Q36 41 46 44" />
+            <path d="M92 43 Q84 41 74 44" />
+          </g>
+        )}
+        {mood === 'think' && <path d="M70 42 Q79 38 89 42" stroke="#141831" strokeWidth="3" strokeLinecap="round" fill="none" />}
+        <ellipse cx="27" cy="82" rx="7" ry="4.2" fill="#ff8f9c" opacity="0.6" />
+        <ellipse cx="93" cy="82" rx="7" ry="4.2" fill="#ff8f9c" opacity="0.6" />
         <Mouth mood={mood} />
       </g>
     </svg>
@@ -71,23 +79,25 @@ export function Pip({ mood = 'happy', size = 72, crown = false, className = '' }
 function Mouth({ mood }: { mood: Mood }) {
   switch (mood) {
     case 'cheer':
-      return <path d="M50 44 Q60 58 70 44 Z" fill="#141831" />;
+      return <path d="M51 80 Q60 94 69 80 Z" fill="#141831" />;
     case 'wow':
     case 'oops':
-      return <ellipse cx="60" cy="48" rx="4" ry={mood === 'wow' ? 5 : 3.4} fill="#141831" />;
+      return <ellipse cx="60" cy="86" rx="4.2" ry={mood === 'wow' ? 5.2 : 3.6} fill="#141831" />;
     case 'think':
-      return <path d="M54 48 L64 46" stroke="#141831" strokeWidth="2.6" strokeLinecap="round" />;
+      return <path d="M55 86 Q60 84 65 85" stroke="#141831" strokeWidth="3" strokeLinecap="round" fill="none" />;
+    case 'wave':
+      return <path d="M52 81 Q60 91 68 81 Z" fill="#141831" />;
     default:
-      return <path d="M51 45 Q60 53 69 45" stroke="#141831" strokeWidth="2.8" strokeLinecap="round" fill="none" />;
+      return <path d="M53 82 Q60 89 67 82" stroke="#141831" strokeWidth="3.2" strokeLinecap="round" fill="none" />;
   }
 }
 
-/** Pip with a speech bubble. */
-export function PipSays({ mood = 'happy', children, crown, size = 64 }: { mood?: Mood; children: ReactNode; crown?: boolean; size?: number }) {
+/** Rookie with a speech bubble. */
+export function RookieSays({ mood = 'happy', children, crown, size = 64 }: { mood?: Mood; children: ReactNode; crown?: boolean; size?: number }) {
   return (
-    <div className="pip-says">
-      <Pip mood={mood} size={size} crown={crown} />
-      <div className="pip-bubble" aria-live="polite">
+    <div className="rookie-says">
+      <Rookie mood={mood} size={size} crown={crown} />
+      <div className="rookie-bubble" aria-live="polite">
         {children}
       </div>
     </div>

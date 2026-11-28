@@ -9,3 +9,4 @@ public/engine/STOCKFISH-LICENSE.txt
 
 # compiled output must never sit next to the TypeScript sources
 src/**/*.js
+scripts/puzzle-opening-tags.json

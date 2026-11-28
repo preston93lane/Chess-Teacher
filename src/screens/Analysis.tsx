@@ -89,10 +89,10 @@ export function AnalysisScreen({ gameId }: { gameId?: string }) {
 
   if (missing) return <div className="page"><Header title="Game not found" backTo="/games" /></div>;
   if (!source) return <div className="page"><Spinner label="Loading game…" /></div>;
-  return <AnalysisView key={gameId ?? 'free'} gameId={gameId} source={source} autoReview={q.get('auto') === '1'} />;
+  return <AnalysisView key={gameId ?? 'free'} gameId={gameId} source={source} autoReview={q.get('auto') === '1'} startPly={Number(q.get('ply')) || undefined} />;
 }
 
-function AnalysisView({ gameId, source, autoReview }: { gameId?: string; source: Source; autoReview: boolean }) {
+function AnalysisView({ gameId, source, autoReview, startPly }: { gameId?: string; source: Source; autoReview: boolean; startPly?: number }) {
   const meta = useApp((s) => s.games.find((g) => g.id === gameId));
   const updateGame = useApp((s) => s.updateGame);
   const removeGame = useApp((s) => s.removeGame);
@@ -106,7 +106,7 @@ function AnalysisView({ gameId, source, autoReview }: { gameId?: string; source:
   const free = !gameId;
   const [mainline, setMainline] = useState<string[]>(source.sans);
   const [startFen, setStartFen] = useState(source.startFen);
-  const [ply, setPly] = useState(free ? source.sans.length : 0);
+  const [ply, setPly] = useState(free ? source.sans.length : Math.min(startPly ?? 0, source.sans.length));
   const [explore, setExplore] = useState<{ base: number; sans: string[]; reviews: (MoveReview | null)[] } | null>(null);
   const [review, setReview] = useState<GameReview | null>(source.stored?.review ?? null);
   const [progress, setProgress] = useState<{ done: number; total: number; verifying?: { done: number; total: number } } | null>(null);

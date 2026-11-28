@@ -8,6 +8,7 @@ import { OPENINGS } from '../data/openings';
 import { ProgramTodayCard } from './Program';
 import { currentDay } from '../lib/program';
 import { WeeklyCard } from './WeeklyReport';
+import { LearnTodayCard } from './Learn';
 
 const KIND_LABEL: Record<string, string> = {
   review: 'Review',
@@ -68,6 +69,7 @@ export function Today() {
 
       <div className="today-grid">
         <div className="today-main">
+        <LearnTodayCard />
         {s.program && <ProgramTodayCard />}
         {s.program && extra.length > 0 && <h3 className="also-today">Also today</h3>}
         <ol className="session">

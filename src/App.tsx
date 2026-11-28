@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
-import { Sunrise, Swords, BookOpen, Target, History, Puzzle, Settings as SettingsIcon } from 'lucide-react';
+import { Sunrise, Swords, BookOpen, Target, History, Puzzle, Settings as SettingsIcon, GraduationCap } from 'lucide-react';
 import { useApp, dueCards } from './lib/store/app';
 import { match, navigate, useRoute } from './lib/router';
 import { Toaster, toast } from './components/Toast';
@@ -43,6 +43,10 @@ import { CoursesHub, CourseScreen } from './screens/Courses';
 import { CctTrainer, VisualizeTrainer } from './screens/Calculation';
 import { ThreatSpotter, GuessTheMove } from './screens/MasterTrainers';
 import { TrapTrainer } from './screens/Traps';
+import { LearnScreen } from './screens/Learn';
+import { LearnStart } from './screens/LearnStart';
+import { PathLessonScreen } from './screens/PathLesson';
+import { CoachCheck } from './screens/CoachCheck';
 
 // Your own repertoires resolve as openings ("rep:<id>") for the trainers.
 setCustomOpeningResolver((id) => {
@@ -60,6 +64,7 @@ setCustomOpeningResolver((id) => {
 });
 
 const TABS = [
+  { path: '/learn', label: 'Learn', icon: GraduationCap, match: (p: string) => p.startsWith('/learn') },
   { path: '/', label: 'Today', icon: Sunrise, match: (p: string) => p === '/' },
   { path: '/play', label: 'Play', icon: Swords, match: (p: string) => p.startsWith('/play') || p.startsWith('/clock') },
   { path: '/puzzles', label: 'Puzzles', icon: Puzzle, match: (p: string) => p.startsWith('/puzzles') },
@@ -72,6 +77,10 @@ function route(path: string): ReactNode {
   const p = path.split('?')[0];
   let m: Record<string, string> | null;
   if (p === '/' || p === '') return <Today />;
+  if (p === '/learn') return <LearnScreen />;
+  if (p === '/learn/start') return <LearnStart />;
+  if (p === '/learn/coach') return <CoachCheck />;
+  if ((m = match('/learn/lesson/:id', p))) return <PathLessonScreen key={path} id={m.id} />;
   if (p === '/play') return <PlaySetup />;
   if (p === '/play/game') return <GameScreen />;
   if (p === '/play/arena') return <ArenaSetup key={path} />;
@@ -160,8 +169,9 @@ export function App() {
     return () => clearTimeout(t);
   }, [hydrated]);
 
+  const immersive = path.startsWith('/learn/lesson') || path.startsWith('/learn/start');
   return (
-    <div className="shell">
+    <div className={`shell${immersive ? ' is-immersive' : ''}`}>
       <nav className="nav" aria-label="Main">
         <div className="nav-brand">
           <BrandMark />

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import '@fontsource-variable/archivo/wdth.css';
 import './styles/app.css';
 import './styles/screens.css';
+import './styles/learn.css';
 import { App } from './App';
 import { registerSW } from 'virtual:pwa-register';
 

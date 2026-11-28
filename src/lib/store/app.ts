@@ -6,6 +6,7 @@ import { newCardState, schedule, type CardState, type Grade } from '../srs/sched
 import { buildDay, getProgram, type ActiveProgram } from '../program';
 import { linesOf, type Repertoire } from '../repertoire';
 import type { ScoutProfile } from '../scout';
+import type { PlayerProfile } from '../path/profile';
 
 export type ThemePref = 'dark' | 'light' | 'system';
 export type BoardTheme = 'slate' | 'walnut' | 'brown' | 'green' | 'blue' | 'sage' | 'purple' | 'coral' | 'mono' | 'night';
@@ -125,8 +126,23 @@ export interface PlanState {
   done: string[];
 }
 
+/** Learn path progress. */
+export interface LearnState {
+  xp: number;
+  /** Finished lessons: best stars (1–3), first finish and plays. */
+  done: Record<string, { stars: number; at: number; plays: number }>;
+  /** XP earned per day (YYYY-MM-DD). */
+  daily: Record<string, number>;
+  profile: PlayerProfile | null;
+}
+
+export const defaultLearn: LearnState = { xp: 0, done: {}, daily: {}, profile: null };
+
 interface AppState {
   hydrated: boolean;
+  learn: LearnState;
+  finishLearnLesson: (id: string, stars: number, xp: number) => void;
+  setLearnProfile: (p: PlayerProfile | null) => void;
   settings: Settings;
   games: GameMeta[];
   cards: Record<string, Card>;
@@ -217,6 +233,22 @@ export const useApp = create<AppState>()(
   persist(
     (set, get) => ({
       hydrated: false,
+      learn: defaultLearn,
+      finishLearnLesson: (id, stars, xp) => {
+        const l = get().learn;
+        const prev = l.done[id];
+        const day = today();
+        if (!prev) get().logActivity('lessons');
+        set({
+          learn: {
+            ...l,
+            xp: l.xp + xp,
+            daily: { ...l.daily, [day]: (l.daily[day] ?? 0) + xp },
+            done: { ...l.done, [id]: { stars: Math.max(stars, prev?.stars ?? 0), at: prev?.at ?? Date.now(), plays: (prev?.plays ?? 0) + 1 } },
+          },
+        });
+      },
+      setLearnProfile: (p) => set({ learn: { ...get().learn, profile: p } }),
       settings: defaultSettings,
       games: [],
       cards: {},
@@ -452,9 +484,10 @@ export const useApp = create<AppState>()(
           customReps: data.customReps ?? {},
           scouts: data.scouts ?? {},
           quiz: data.quiz ?? { best: {}, rounds: 0, history: [] },
+          learn: { ...defaultLearn, ...(data.learn ?? {}) },
         }),
       resetAll: () =>
-        set({ settings: defaultSettings, games: [], cards: {}, lessons: {}, repertoire: {}, activity: {}, plan: null, puzzles: defaultPuzzleStats, classics: {}, program: null, quiz: { best: {}, rounds: 0, history: [] }, vision: {}, drills: {}, repTrain: {}, variantStats: {}, customReps: {}, scouts: {} }),
+        set({ settings: defaultSettings, games: [], cards: {}, lessons: {}, repertoire: {}, activity: {}, plan: null, puzzles: defaultPuzzleStats, classics: {}, program: null, quiz: { best: {}, rounds: 0, history: [] }, vision: {}, drills: {}, repTrain: {}, variantStats: {}, customReps: {}, scouts: {}, learn: defaultLearn }),
     }),
     {
       name: 'outpost-state-v1',
@@ -477,6 +510,7 @@ export const useApp = create<AppState>()(
         variantStats: s.variantStats,
         customReps: s.customReps,
         scouts: s.scouts,
+        learn: s.learn,
       }),
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<AppState>;
@@ -485,6 +519,7 @@ export const useApp = create<AppState>()(
           ...p,
           settings: { ...defaultSettings, ...(p.settings ?? {}) },
           puzzles: { ...defaultPuzzleStats, ...(p.puzzles ?? {}) },
+          learn: { ...defaultLearn, ...(p.learn ?? {}) },
         };
       },
       onRehydrateStorage: () => () => {

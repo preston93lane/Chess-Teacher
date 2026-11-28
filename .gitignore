@@ -6,3 +6,6 @@ public/engine/STOCKFISH-LICENSE.txt
 .DS_Store
 *.log
 .wrangler
+
+# compiled output must never sit next to the TypeScript sources
+src/**/*.js
